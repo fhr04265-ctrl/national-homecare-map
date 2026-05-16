@@ -35,8 +35,12 @@
     .analysis-card{border:1px solid var(--line);border-radius:8px;background:#fafcff;padding:10px;font-size:11px;color:var(--muted)}
     .analysis-card b{display:block;color:var(--ink);font-size:19px;line-height:1.15}
     .analysis-list{display:grid;gap:6px;margin-top:8px}
-    .analysis-row{display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid #edf1f7;padding:5px 0;font-size:12px}
+    .analysis-row{display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid #edf1f7;padding:7px 0;font-size:12px;cursor:pointer}
     .analysis-row b{font-size:13px}
+    .facility-list{display:none;padding:3px 0 8px 18px;border-bottom:1px solid #edf1f7}
+    .facility-list.open{display:grid;gap:5px}
+    .facility-item{border:0;background:transparent;text-align:left;padding:4px 0;min-height:auto;font-weight:600;color:#24364b}
+    .facility-item small{display:block;color:var(--muted);font-weight:500;margin-top:1px}
     #map{height:100vh;min-height:720px}
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
@@ -130,6 +134,7 @@
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
     const tradeLayer = L.layerGroup().addTo(map);
+    const markerByUid = new Map();
     const colors = {"居宅介護支援":"#0057ff","病院":"#111111","訪問診療対応診療所":"#ff8a00","訪問看護":"#e6002e"};
     function yen(n){return Number(n||0).toLocaleString("ja-JP")}
     function colorFor(key){if(colors[key])return colors[key];let h=0;for(let i=0;i<key.length;i++)h=((h<<5)-h+key.charCodeAt(i))|0;return "hsl("+(Math.abs(h)%360)+" 62% 38%)"}
@@ -176,11 +181,13 @@
     }
     function renderFacilities(){
       facilityLayer.clearLayers();
+      markerByUid.clear();
       const rows=filtered();
       rows.forEach(f=>{
         const radius = f.code==="medical_hospital" ? 8 : f.code==="medical_clinic" ? 7 : f.code==="130" ? 6 : f.code==="430" ? 5 : 3;
         const weight = f.code==="medical_hospital" || f.code==="medical_clinic" ? 2 : 1;
         const marker = L.circleMarker([f.lat,f.lng],{radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false)}).addTo(facilityLayer);
+        markerByUid.set(f.uid, marker);
         if (f.code==="medical_hospital" || f.code==="medical_clinic") marker.bringToFront();
       });
       document.querySelector("#loadedCount").textContent=yen(state.data?state.data.facilities.length:0);
@@ -260,9 +267,22 @@
         '<div class="analysis-card"><b>'+yen(hospitals)+'</b>病院</div>'+
         '<div class="analysis-card"><b>'+yen(clinics)+'</b>訪問診療対応診療所</div>'+
         '<div class="analysis-card"><b>'+yen(nursing)+'</b>訪問看護</div>';
-      document.querySelector("#serviceSummary").innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ja")).map(([name,count])=>
-        '<div class="analysis-row"><span><span class="dot" style="background:'+colorFor(name)+'"></span> '+name+'</span><b>'+yen(count)+'</b></div>'
+      const byService=rows.reduce((memo,f)=>{(memo[f.group]=memo[f.group]||[]).push(f);return memo},{});
+      document.querySelector("#serviceSummary").innerHTML=Object.entries(byService).sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0],"ja")).map(([name,items],idx)=>
+        '<div class="analysis-row" data-service-idx="'+idx+'"><span><span class="dot" style="background:'+colorFor(name)+'"></span> '+name+'</span><b>'+yen(items.length)+'</b></div>'+
+        '<div class="facility-list" id="serviceList'+idx+'">'+items.slice().sort((a,b)=>a.distanceKm-b.distanceKm).map(f=>
+          '<button type="button" class="facility-item" data-uid="'+f.uid+'">'+f.name+
+          '<small>'+((f.city||"-"))+' / '+f.distanceKm.toFixed(2)+'km'+(f.phone?' / '+f.phone:'')+'</small></button>'
+        ).join("")+'</div>'
       ).join("");
+      document.querySelectorAll("#serviceSummary .analysis-row").forEach(row=>row.addEventListener("click",()=>{
+        const list=document.querySelector("#serviceList"+row.dataset.serviceIdx);
+        if(list)list.classList.toggle("open");
+      }));
+      document.querySelectorAll("#serviceSummary .facility-item").forEach(button=>button.addEventListener("click",event=>{
+        event.stopPropagation();
+        focusFacility(button.dataset.uid);
+      }));
     }
     function drawTradeArea(){
       tradeLayer.clearLayers();
@@ -300,6 +320,16 @@
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
     window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
+    function focusFacility(uid){
+      if(!state.data)return;
+      const f=state.data.facilities.find(x=>x.uid===uid);
+      if(!f)return;
+      switchTab("map");
+      map.setView([f.lat,f.lng],15);
+      const marker=markerByUid.get(uid);
+      if(marker) marker.openPopup();
+      else L.popup().setLatLng([f.lat,f.lng]).setContent(popup(f)).openOn(map);
+    }
     fillPref(); fillLayers(); renderFacilities();
   </script>
 </body>
