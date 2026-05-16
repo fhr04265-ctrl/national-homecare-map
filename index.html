@@ -55,6 +55,15 @@
     .lead-table th{color:#344054;font-size:11px}
     .lead-table a{color:var(--blue);font-weight:800;text-decoration:none}
     .score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900}
+    .insight-card{border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:8px;background:#fff;padding:12px;font-size:12px;line-height:1.6;margin-bottom:8px}
+    .insight-card strong{display:block;font-size:18px;line-height:1.25;color:var(--ink);margin-bottom:4px}
+    .score-bars{display:grid;gap:7px;margin-top:8px}
+    .score-line{display:grid;grid-template-columns:72px 1fr 42px;gap:8px;align-items:center;font-size:12px}
+    .meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}
+    .meter i{display:block;height:100%;background:var(--blue)}
+    .city-summary{display:grid;gap:6px}
+    .city-row{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #edf1f7;padding:7px 0;font-size:12px}
+    .city-row b{font-size:13px}
     .mobile-nav{display:none}
     #map{height:100vh;min-height:720px}
     .popup h3{font-size:15px;margin:0 0 6px}
@@ -132,9 +141,14 @@
 
       <div id="analysisTab" class="tab-panel">
         <section class="panel">
+          <div id="tradeInsight"></div>
           <div class="label">商圏サマリー</div>
           <div id="analysisContext" class="selected">地図タブで施設を選択し、商圏を描画してください。</div>
           <div id="analysisSummary" class="analysis-grid" style="margin-top:8px"></div>
+        </section>
+        <section class="panel">
+          <div class="label">4軸スコア</div>
+          <div id="scoreBreakdown" class="score-bars"></div>
         </section>
         <section class="panel">
           <div class="label">主要カテゴリ</div>
@@ -165,7 +179,14 @@
         </section>
       </div>
 
+      <div id="citySummaryBlock" class="tab-panel">
+      </div>
+
       <div id="competitionTab" class="tab-panel">
+        <section class="panel">
+          <div class="label">市区町村サマリー</div>
+          <div id="citySummary" class="city-summary"></div>
+        </section>
         <section class="panel">
           <div class="label">競合分析</div>
           <div id="competitionSummary" class="analysis-grid"></div>
@@ -327,6 +348,36 @@
     function tradeCounts(){
       return (state.tradeRows||[]).reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
     }
+    function clamp(n,min,max){return Math.max(min,Math.min(max,n))}
+    function tradeScore(est, counts){
+      const nursing=counts["訪問看護"]||0;
+      const care=counts["居宅介護支援"]||0;
+      const hospitals=counts["病院"]||0;
+      const clinics=counts["訪問診療対応診療所"]||0;
+      const demand=clamp(Math.round((est.elderly75||0)/180),0,100);
+      const referral=clamp(Math.round(care*3.2 + clinics*5),0,100);
+      const medical=clamp(Math.round(hospitals*7 + clinics*6),0,100);
+      const competition=clamp(Math.round(100 - nursing*5 + ((est.elderly75||0)/Math.max(nursing,1))/90),0,100);
+      const overall=Math.round(demand*.35 + referral*.25 + medical*.2 + competition*.2);
+      const grade=overall>=78?"A":overall>=60?"B":overall>=42?"C":"D";
+      return {overall,grade,demand,referral,medical,competition,nursing,care,hospitals,clinics};
+    }
+    function tradeNarrative(score, est){
+      const strengths=[];
+      const cautions=[];
+      if(score.demand>=70)strengths.push("75歳以上人口が厚く、需要ポテンシャルが高い商圏です");
+      if(score.referral>=70)strengths.push("居宅介護支援・訪問診療の紹介元候補が多いです");
+      if(score.medical>=65)strengths.push("病院・訪問診療対応診療所との医療連携余地があります");
+      if(score.competition>=70)strengths.push("訪問看護の競合密度は相対的に低めです");
+      if(score.competition<45)cautions.push("訪問看護競合が多く、差別化訴求が必要です");
+      if(score.referral<35)cautions.push("紹介元候補が少なめで、広域営業や医療連携開拓が必要です");
+      if(score.demand<35)cautions.push("需要人口の厚みは限定的です");
+      const headline=score.grade==="A"?"重点検討に値する商圏です":score.grade==="B"?"営業優先度は中〜高です":score.grade==="C"?"条件付きで検討する商圏です":"優先度は低めです";
+      const action=score.grade==="A"||score.grade==="B"
+        ?"まず居宅介護支援と訪問診療対応診療所を優先し、競合訪問看護との差別化ポイントを確認してください。"
+        :"既存接点や特定疾患・医療依存度など、別の勝ち筋がある場合に絞って検討してください。";
+      return {headline,action,strengths,cautions};
+    }
     function salesScoreFor(row, est, counts){
       const base = row.group==="居宅介護支援" ? 45 : row.group==="訪問診療対応診療所" ? 42 : row.group==="病院" ? 38 : 25;
       const near = Math.max(0, 18 - row.distanceKm * 4);
@@ -355,18 +406,33 @@
       context.innerHTML='<b>'+state.selected.name+'</b>'+state.selected.serviceLabel+' / '+(state.selected.city||"-")+' / 半径 '+radius+'km';
       const est=estimateTradePopulation(rows);
       const counts=rows.reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
+      const score=tradeScore(est,counts);
+      const narrative=tradeNarrative(score,est);
       const nursing=counts["訪問看護"]||0;
       const care=counts["居宅介護支援"]||0;
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
       const elderlyPerNursing=nursing?Math.round(est.elderly/nursing):"-";
       document.querySelector("#analysisSummary").innerHTML=
+        '<div class="analysis-card"><b><span class="score-badge">'+score.grade+'</span> '+score.overall+'</b>商圏総合スコア</div>'+
         '<div class="analysis-card"><b>'+yen(rows.length)+'</b>商圏内施設数</div>'+
         '<div class="analysis-card"><b>'+yen(est.elderly)+'</b>推計65歳以上人口</div>'+
         '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>推計75歳以上人口</div>'+
         '<div class="analysis-card"><b>'+elderlyPerNursing+'</b>65歳以上/訪問看護</div>'+
         '<div class="analysis-card"><b>'+yen(est.population)+'</b>推計総人口</div>'+
         '<div class="analysis-card"><b>'+est.matched+'/'+est.cities+'</b>人口推計に使えた市区町村</div>';
+      document.querySelector("#tradeInsight").innerHTML=
+        '<div class="insight-card"><strong>営業・企画判断: '+narrative.headline+'</strong>'+
+        '<div>'+narrative.action+'</div>'+
+        (narrative.strengths.length?'<div><b>強み:</b> '+narrative.strengths.join(' / ')+'</div>':'')+
+        (narrative.cautions.length?'<div><b>注意:</b> '+narrative.cautions.join(' / ')+'</div>':'')+
+        '</div>';
+      document.querySelector("#scoreBreakdown").innerHTML=[
+        ["需要",score.demand],
+        ["紹介元",score.referral],
+        ["医療連携",score.medical],
+        ["競合余地",score.competition]
+      ].map(([label,value])=>'<div class="score-line"><span>'+label+'</span><div class="meter"><i style="width:'+value+'%"></i></div><b>'+value+'</b></div>').join("");
       document.querySelector("#prioritySummary").innerHTML=
         '<div class="analysis-card"><b>'+yen(care)+'</b>居宅介護支援</div>'+
         '<div class="analysis-card"><b>'+yen(hospitals)+'</b>病院</div>'+
@@ -429,6 +495,20 @@
         '<div class="analysis-card"><b>'+yen((tradeCounts()["訪問診療対応診療所"]||0))+'</b>訪問診療対応診療所</div>';
       list.innerHTML=competitors.map(f=>'<div class="analysis-row"><span>'+f.name+'<br><small>'+((f.city||"-"))+' / '+f.distanceKm.toFixed(2)+'km</small></span><b>'+f.distanceKm.toFixed(1)+'km</b></div>').join("");
     }
+    function renderCitySummary(){
+      const root=document.querySelector("#citySummary");
+      if(!state.data){root.innerHTML='<div class="selected">都道府県を選択してください。</div>';return}
+      const rows=Object.entries(state.data.cityCounts||{}).map(([city,count])=>{
+        const pop=populationForCity(city)||{};
+        const facilities=state.data.facilities.filter(f=>(f.city||"市区町村未設定")===city);
+        const nursing=facilities.filter(f=>f.group==="訪問看護").length;
+        const care=facilities.filter(f=>f.group==="居宅介護支援").length;
+        const clinics=facilities.filter(f=>f.group==="訪問診療対応診療所").length;
+        const potential=nursing?Math.round((pop.elderly75||0)/nursing):pop.elderly75||0;
+        return {city,count,pop,nursing,care,clinics,potential};
+      }).sort((a,b)=>b.potential-a.potential||b.count-a.count).slice(0,15);
+      root.innerHTML=rows.map(r=>'<div class="city-row"><span><b>'+r.city+'</b><small>75歳以上 '+yen(r.pop.elderly75||0)+' / 訪看 '+yen(r.nursing)+' / 居宅 '+yen(r.care)+' / 訪問診療 '+yen(r.clinics)+'</small></span><b>'+yen(r.potential)+'</b></div>').join("");
+    }
     function drawTradeArea(){
       tradeLayer.clearLayers();
       if(!state.selected)return;
@@ -463,8 +543,9 @@
       map.setView(state.data.center, state.pref==="01"?7:9);
       renderSelected(false);
       renderFacilities();
+      renderCitySummary();
     });
-    document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;renderFacilities()});
+    document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;renderFacilities();renderCitySummary()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
