@@ -27,6 +27,16 @@
     .check input{width:16px;min-height:16px}
     .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
+    .tabs button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block}
+    .analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .analysis-card{border:1px solid var(--line);border-radius:8px;background:#fafcff;padding:10px;font-size:11px;color:var(--muted)}
+    .analysis-card b{display:block;color:var(--ink);font-size:19px;line-height:1.15}
+    .analysis-list{display:grid;gap:6px;margin-top:8px}
+    .analysis-row{display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid #edf1f7;padding:5px 0;font-size:12px}
+    .analysis-row b{font-size:13px}
     #map{height:100vh;min-height:720px}
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
@@ -42,6 +52,12 @@
         <div class="sub">都道府県データを選択時に読み込む全国版MVPです。施設レイヤーは初期未選択です。</div>
       </header>
 
+      <nav class="tabs" aria-label="表示切替">
+        <button type="button" id="mapTabButton" aria-selected="true">地図</button>
+        <button type="button" id="analysisTabButton" aria-selected="false">商圏分析</button>
+      </nav>
+
+      <div id="mapTab" class="tab-panel active">
       <section class="panel">
         <div class="label">対象地域</div>
         <div class="grid2">
@@ -80,6 +96,23 @@
           <div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>
         </div>
       </section>
+      </div>
+
+      <div id="analysisTab" class="tab-panel">
+        <section class="panel">
+          <div class="label">商圏サマリー</div>
+          <div id="analysisContext" class="selected">地図タブで施設を選択し、商圏を描画してください。</div>
+          <div id="analysisSummary" class="analysis-grid" style="margin-top:8px"></div>
+        </section>
+        <section class="panel">
+          <div class="label">主要カテゴリ</div>
+          <div id="prioritySummary" class="analysis-grid"></div>
+        </section>
+        <section class="panel">
+          <div class="label">サービス別件数</div>
+          <div id="serviceSummary" class="analysis-list"></div>
+        </section>
+      </div>
 
       <section class="panel sub">
         出所：厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット。全国版では都道府県別データを読み込みます。商圏CSVは読み込み済み都道府県内で抽出します。
@@ -101,6 +134,12 @@
     function yen(n){return Number(n||0).toLocaleString("ja-JP")}
     function colorFor(key){if(colors[key])return colors[key];let h=0;for(let i=0;i<key.length;i++)h=((h<<5)-h+key.charCodeAt(i))|0;return "hsl("+(Math.abs(h)%360)+" 62% 38%)"}
     function distanceKm(aLat,aLng,bLat,bLng){const r=6371,dLat=(bLat-aLat)*Math.PI/180,dLng=(bLng-aLng)*Math.PI/180,s1=Math.sin(dLat/2),s2=Math.sin(dLng/2),a=s1*s1+Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*s2*s2;return 2*r*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+    function switchTab(tab){
+      document.querySelector("#mapTab").classList.toggle("active",tab==="map");
+      document.querySelector("#analysisTab").classList.toggle("active",tab==="analysis");
+      document.querySelector("#mapTabButton").setAttribute("aria-selected",String(tab==="map"));
+      document.querySelector("#analysisTabButton").setAttribute("aria-selected",String(tab==="analysis"));
+    }
     function fillPref(){
       document.querySelector("#pref").innerHTML = '<option value="">都道府県を選択</option>' + manifest.prefectures.map(p => '<option value="'+p.code+'">'+p.name+'（'+yen(p.count)+'）</option>').join("");
     }
@@ -115,7 +154,7 @@
       return new Promise((resolve,reject)=>{
         if(window.NATIONAL_HOMECARE_DATA && window.NATIONAL_HOMECARE_DATA[code]) return resolve(window.NATIONAL_HOMECARE_DATA[code]);
         const script=document.createElement("script");
-        script.src="national_homecare_data/pref_"+code+".js";
+        script.src="national_homecare_data/pref_"+code+".js?v="+encodeURIComponent(manifest.generatedAt);
         script.onload=()=>resolve(window.NATIONAL_HOMECARE_DATA[code]);
         script.onerror=reject;
         document.body.appendChild(script);
@@ -139,7 +178,10 @@
       facilityLayer.clearLayers();
       const rows=filtered();
       rows.forEach(f=>{
-        L.circleMarker([f.lat,f.lng],{radius:f.code==="130"?5:f.code==="430"?4:f.code==="medical_hospital"?5:3,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.75,opacity:.85,weight:1}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false)}).addTo(facilityLayer);
+        const radius = f.code==="medical_hospital" ? 8 : f.code==="medical_clinic" ? 7 : f.code==="130" ? 6 : f.code==="430" ? 5 : 3;
+        const weight = f.code==="medical_hospital" || f.code==="medical_clinic" ? 2 : 1;
+        const marker = L.circleMarker([f.lat,f.lng],{radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false)}).addTo(facilityLayer);
+        if (f.code==="medical_hospital" || f.code==="medical_clinic") marker.bringToFront();
       });
       document.querySelector("#loadedCount").textContent=yen(state.data?state.data.facilities.length:0);
       document.querySelector("#visibleCount").textContent=yen(rows.length);
@@ -163,6 +205,65 @@
       const radius=Number(document.querySelector("#tradeRadius").value||0);
       return state.data.facilities.map(f=>({...f,distanceKm:distanceKm(state.selected.lat,state.selected.lng,f.lat,f.lng)})).filter(f=>f.distanceKm<=radius).sort((a,b)=>a.distanceKm-b.distanceKm);
     }
+    function populationForCity(city){
+      if(!state.data||!city)return null;
+      const pop=state.data.populationByCity||{};
+      if(pop[city])return pop[city];
+      const key=Object.keys(pop).sort((a,b)=>b.length-a.length).find(k=>city.startsWith(k));
+      return key?pop[key]:null;
+    }
+    function estimateTradePopulation(rows){
+      const byCity={};
+      rows.forEach(f=>{const city=f.city||"市区町村未設定"; byCity[city]=(byCity[city]||0)+1});
+      const loadedByCity=state.data.facilities.reduce((memo,f)=>{const city=f.city||"市区町村未設定"; memo[city]=(memo[city]||0)+1; return memo},{});
+      let population=0, elderly=0, elderly75=0, matched=0;
+      Object.entries(byCity).forEach(([city,count])=>{
+        const pop=populationForCity(city);
+        const base=loadedByCity[city]||count;
+        if(!pop||!base)return;
+        const ratio=Math.min(1,count/base);
+        population+=pop.population*ratio;
+        elderly+=pop.elderly*ratio;
+        elderly75+=pop.elderly75*ratio;
+        matched++;
+      });
+      return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),matched,cities:Object.keys(byCity).length};
+    }
+    function renderAnalysis(){
+      const rows=state.tradeRows||[];
+      const radius=document.querySelector("#tradeRadius").value;
+      const context=document.querySelector("#analysisContext");
+      if(!state.selected||!rows.length){
+        context.textContent="地図タブで施設を選択し、商圏を描画してください。";
+        document.querySelector("#analysisSummary").innerHTML="";
+        document.querySelector("#prioritySummary").innerHTML="";
+        document.querySelector("#serviceSummary").innerHTML="";
+        return;
+      }
+      context.innerHTML='<b>'+state.selected.name+'</b>'+state.selected.serviceLabel+' / '+(state.selected.city||"-")+' / 半径 '+radius+'km';
+      const est=estimateTradePopulation(rows);
+      const counts=rows.reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
+      const nursing=counts["訪問看護"]||0;
+      const care=counts["居宅介護支援"]||0;
+      const hospitals=counts["病院"]||0;
+      const clinics=counts["訪問診療対応診療所"]||0;
+      const elderlyPerNursing=nursing?Math.round(est.elderly/nursing):"-";
+      document.querySelector("#analysisSummary").innerHTML=
+        '<div class="analysis-card"><b>'+yen(rows.length)+'</b>商圏内施設数</div>'+
+        '<div class="analysis-card"><b>'+yen(est.elderly)+'</b>推計65歳以上人口</div>'+
+        '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>推計75歳以上人口</div>'+
+        '<div class="analysis-card"><b>'+elderlyPerNursing+'</b>65歳以上/訪問看護</div>'+
+        '<div class="analysis-card"><b>'+yen(est.population)+'</b>推計総人口</div>'+
+        '<div class="analysis-card"><b>'+est.matched+'/'+est.cities+'</b>人口推計に使えた市区町村</div>';
+      document.querySelector("#prioritySummary").innerHTML=
+        '<div class="analysis-card"><b>'+yen(care)+'</b>居宅介護支援</div>'+
+        '<div class="analysis-card"><b>'+yen(hospitals)+'</b>病院</div>'+
+        '<div class="analysis-card"><b>'+yen(clinics)+'</b>訪問診療対応診療所</div>'+
+        '<div class="analysis-card"><b>'+yen(nursing)+'</b>訪問看護</div>';
+      document.querySelector("#serviceSummary").innerHTML=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ja")).map(([name,count])=>
+        '<div class="analysis-row"><span><span class="dot" style="background:'+colorFor(name)+'"></span> '+name+'</span><b>'+yen(count)+'</b></div>'
+      ).join("");
+    }
     function drawTradeArea(){
       tradeLayer.clearLayers();
       if(!state.selected)return;
@@ -170,6 +271,7 @@
       state.tradeRows=tradeFacilities();
       L.circle([state.selected.lat,state.selected.lng],{radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.75,weight:2}).addTo(tradeLayer);
       document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+state.data.prefName+'</b>抽出対象</div>';
+      renderAnalysis();
     }
     function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
     function exportTradeCsv(){
@@ -194,7 +296,9 @@
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",drawTradeArea);
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
-    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>'});
+    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis()});
+    document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
+    document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
     window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
     fillPref(); fillLayers(); renderFacilities();
   </script>
