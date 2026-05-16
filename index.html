@@ -148,7 +148,7 @@
     }
     function renderCities(){
       const counts=state.data?.cityCounts||{};
-      const cities=Object.keys(counts).sort((a,b)=>a.localeCompare(b,"ja"));
+      const cities=Object.keys(counts).sort((a,b)=>counts[b]-counts[a] || a.localeCompare(b,"ja"));
       document.querySelector("#city").innerHTML='<option value="すべて">市区町村すべて</option>'+cities.map(c=>'<option value="'+c+'">'+c+'（'+yen(counts[c])+'）</option>').join("");
     }
     function renderSelected(drawNow){
