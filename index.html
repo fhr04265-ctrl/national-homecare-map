@@ -27,7 +27,8 @@
     .check input{width:16px;min-height:16px}
     .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-    .tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
+    .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
+    .tabs button{font-size:12px;padding:7px 6px}
     .tabs button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
     .tab-panel{display:none}
     .tab-panel.active{display:block}
@@ -41,11 +42,16 @@
     .facility-list.open{display:grid;gap:5px}
     .facility-item{border:0;background:transparent;text-align:left;padding:4px 0;min-height:auto;font-weight:600;color:#24364b}
     .facility-item small{display:block;color:var(--muted);font-weight:500;margin-top:1px}
+    .lead-table{width:100%;border-collapse:collapse;font-size:12px}
+    .lead-table th,.lead-table td{border-bottom:1px solid #edf1f7;padding:7px 4px;text-align:left;vertical-align:top}
+    .lead-table th{color:#344054;font-size:11px}
+    .lead-table a{color:var(--blue);font-weight:800;text-decoration:none}
+    .score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900}
     #map{height:100vh;min-height:720px}
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){.app{grid-template-columns:1fr;height:auto}#map{height:72vh;min-height:520px}}
+    @media (max-width:900px){.app{grid-template-columns:1fr;height:auto}.tabs{position:sticky;top:0;z-index:500;grid-template-columns:repeat(5,minmax(64px,1fr));overflow:auto}.tabs button{white-space:nowrap}#map{height:68vh;min-height:460px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}}
   </style>
 </head>
 <body>
@@ -59,6 +65,9 @@
       <nav class="tabs" aria-label="表示切替">
         <button type="button" id="mapTabButton" aria-selected="true">地図</button>
         <button type="button" id="analysisTabButton" aria-selected="false">商圏分析</button>
+        <button type="button" id="salesTabButton" aria-selected="false">営業リスト</button>
+        <button type="button" id="demandTabButton" aria-selected="false">需要分析</button>
+        <button type="button" id="competitionTabButton" aria-selected="false">競合分析</button>
       </nav>
 
       <div id="mapTab" class="tab-panel active">
@@ -118,6 +127,33 @@
         </section>
       </div>
 
+      <div id="salesTab" class="tab-panel">
+        <section class="panel">
+          <div class="label">営業ターゲット</div>
+          <div class="actions" style="margin-bottom:8px">
+            <button id="exportSalesList" type="button">営業リストCSV</button>
+            <button id="refreshSalesList" type="button">再集計</button>
+          </div>
+          <div id="salesList"></div>
+        </section>
+      </div>
+
+      <div id="demandTab" class="tab-panel">
+        <section class="panel">
+          <div class="label">需要ポテンシャル</div>
+          <div id="demandSummary" class="analysis-grid"></div>
+          <div class="sub" style="margin-top:8px">要介護者数は、現段階では75歳以上人口からの暫定推計です。公的な介護保険者別認定者数を追加すると精度を上げられます。</div>
+        </section>
+      </div>
+
+      <div id="competitionTab" class="tab-panel">
+        <section class="panel">
+          <div class="label">競合分析</div>
+          <div id="competitionSummary" class="analysis-grid"></div>
+          <div id="competitorList" class="analysis-list"></div>
+        </section>
+      </div>
+
       <section class="panel sub">
         出所：厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット。全国版では都道府県別データを読み込みます。商圏CSVは読み込み済み都道府県内で抽出します。
       </section>
@@ -142,8 +178,14 @@
     function switchTab(tab){
       document.querySelector("#mapTab").classList.toggle("active",tab==="map");
       document.querySelector("#analysisTab").classList.toggle("active",tab==="analysis");
+      document.querySelector("#salesTab").classList.toggle("active",tab==="sales");
+      document.querySelector("#demandTab").classList.toggle("active",tab==="demand");
+      document.querySelector("#competitionTab").classList.toggle("active",tab==="competition");
       document.querySelector("#mapTabButton").setAttribute("aria-selected",String(tab==="map"));
       document.querySelector("#analysisTabButton").setAttribute("aria-selected",String(tab==="analysis"));
+      document.querySelector("#salesTabButton").setAttribute("aria-selected",String(tab==="sales"));
+      document.querySelector("#demandTabButton").setAttribute("aria-selected",String(tab==="demand"));
+      document.querySelector("#competitionTabButton").setAttribute("aria-selected",String(tab==="competition"));
     }
     function fillPref(){
       document.querySelector("#pref").innerHTML = '<option value="">都道府県を選択</option>' + manifest.prefectures.map(p => '<option value="'+p.code+'">'+p.name+'（'+yen(p.count)+'）</option>').join("");
@@ -223,7 +265,7 @@
       const byCity={};
       rows.forEach(f=>{const city=f.city||"市区町村未設定"; byCity[city]=(byCity[city]||0)+1});
       const loadedByCity=state.data.facilities.reduce((memo,f)=>{const city=f.city||"市区町村未設定"; memo[city]=(memo[city]||0)+1; return memo},{});
-      let population=0, elderly=0, elderly75=0, matched=0;
+      let population=0, elderly=0, elderly75=0, elderlySingleHouseholds=0, elderlyCoupleHouseholds=0, matched=0;
       Object.entries(byCity).forEach(([city,count])=>{
         const pop=populationForCity(city);
         const base=loadedByCity[city]||count;
@@ -232,9 +274,28 @@
         population+=pop.population*ratio;
         elderly+=pop.elderly*ratio;
         elderly75+=pop.elderly75*ratio;
+        elderlySingleHouseholds+=(pop.elderlySingleHouseholds||0)*ratio;
+        elderlyCoupleHouseholds+=(pop.elderlyCoupleHouseholds||0)*ratio;
         matched++;
       });
-      return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),matched,cities:Object.keys(byCity).length};
+      return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),elderlySingleHouseholds:Math.round(elderlySingleHouseholds),elderlyCoupleHouseholds:Math.round(elderlyCoupleHouseholds),careNeed:Math.round(elderly75*0.32),matched,cities:Object.keys(byCity).length};
+    }
+    function tradeCounts(){
+      return (state.tradeRows||[]).reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
+    }
+    function salesScoreFor(row, est, counts){
+      const base = row.group==="居宅介護支援" ? 45 : row.group==="訪問診療対応診療所" ? 42 : row.group==="病院" ? 38 : 25;
+      const near = Math.max(0, 18 - row.distanceKm * 4);
+      const demand = Math.min(25, (est.elderly75 || 0) / 600);
+      const competition = Math.max(0, 12 - (counts["訪問看護"] || 0) * 0.7);
+      return Math.round(base + near + demand + competition);
+    }
+    function targetRows(){
+      if(!state.tradeRows.length)return [];
+      const est=estimateTradePopulation(state.tradeRows);
+      const counts=tradeCounts();
+      const targets=new Set(["居宅介護支援","病院","訪問診療対応診療所"]);
+      return state.tradeRows.filter(f=>targets.has(f.group)).map(f=>({...f,salesScore:salesScoreFor(f,est,counts)})).sort((a,b)=>b.salesScore-a.salesScore||a.distanceKm-b.distanceKm);
     }
     function renderAnalysis(){
       const rows=state.tradeRows||[];
@@ -283,6 +344,46 @@
         event.stopPropagation();
         focusFacility(button.dataset.uid);
       }));
+      renderSalesList();
+      renderDemand();
+      renderCompetition();
+    }
+    function renderSalesList(){
+      const root=document.querySelector("#salesList");
+      const rows=targetRows();
+      if(!rows.length){root.innerHTML='<div class="selected">商圏を描画すると、居宅介護支援・病院・訪問診療対応診療所の営業リストを表示します。</div>';return}
+      root.innerHTML='<table class="lead-table"><thead><tr><th>優先</th><th>施設</th><th>種別</th><th>距離</th><th>連絡</th></tr></thead><tbody>'+
+        rows.map(f=>'<tr><td><span class="score-badge">'+f.salesScore+'</span></td><td><button type="button" class="facility-item" data-uid="'+f.uid+'">'+f.name+'<small>'+((f.city||"-"))+' / '+f.address+'</small></button></td><td>'+f.group+'</td><td>'+f.distanceKm.toFixed(2)+'km</td><td>'+(f.phone?'<a href="tel:'+f.phone.replace(/[^0-9+]/g,"")+'">電話</a>':'-')+'</td></tr>').join("")+
+        '</tbody></table>';
+      root.querySelectorAll(".facility-item").forEach(button=>button.addEventListener("click",()=>focusFacility(button.dataset.uid)));
+    }
+    function renderDemand(){
+      const root=document.querySelector("#demandSummary");
+      if(!state.tradeRows.length){root.innerHTML='<div class="analysis-card"><b>-</b>商圏を描画してください</div>';return}
+      const est=estimateTradePopulation(state.tradeRows);
+      const counts=tradeCounts();
+      const nursing=counts["訪問看護"]||0;
+      root.innerHTML=
+        '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>75歳以上人口</div>'+
+        '<div class="analysis-card"><b>'+yen(est.careNeed)+'</b>要介護者数 暫定推計</div>'+
+        '<div class="analysis-card"><b>'+yen(est.elderlySingleHouseholds)+'</b>65歳以上単独世帯</div>'+
+        '<div class="analysis-card"><b>'+yen(est.elderlyCoupleHouseholds)+'</b>高齢夫婦世帯</div>'+
+        '<div class="analysis-card"><b>'+yen(nursing?Math.round(est.elderly75/nursing):0)+'</b>75歳以上/訪問看護</div>'+
+        '<div class="analysis-card"><b>'+yen(nursing?Math.round(est.careNeed/nursing):0)+'</b>要介護推計/訪問看護</div>';
+    }
+    function renderCompetition(){
+      const summary=document.querySelector("#competitionSummary");
+      const list=document.querySelector("#competitorList");
+      if(!state.tradeRows.length){summary.innerHTML='<div class="analysis-card"><b>-</b>商圏を描画してください</div>';list.innerHTML='';return}
+      const est=estimateTradePopulation(state.tradeRows);
+      const competitors=state.tradeRows.filter(f=>f.group==="訪問看護").sort((a,b)=>a.distanceKm-b.distanceKm);
+      const density=competitors.length?Math.round(est.elderly75/competitors.length):0;
+      summary.innerHTML=
+        '<div class="analysis-card"><b>'+yen(competitors.length)+'</b>訪問看護 競合数</div>'+
+        '<div class="analysis-card"><b>'+yen(density)+'</b>75歳以上/競合</div>'+
+        '<div class="analysis-card"><b>'+yen((tradeCounts()["居宅介護支援"]||0))+'</b>居宅介護支援</div>'+
+        '<div class="analysis-card"><b>'+yen((tradeCounts()["訪問診療対応診療所"]||0))+'</b>訪問診療対応診療所</div>';
+      list.innerHTML=competitors.map(f=>'<div class="analysis-row"><span>'+f.name+'<br><small>'+((f.city||"-"))+' / '+f.distanceKm.toFixed(2)+'km</small></span><b>'+f.distanceKm.toFixed(1)+'km</b></div>').join("");
     }
     function drawTradeArea(){
       tradeLayer.clearLayers();
@@ -302,6 +403,14 @@
       const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
       const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="trade_area_facilities_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
+    function exportSalesCsv(){
+      const rows=targetRows();
+      if(!rows.length)return;
+      const header=["営業優先度","距離km","種別","施設名","都道府県","市区町村","住所","電話","ID/事業所番号","営業ステータス","担当者","次回アクション","メモ"];
+      const csv=[header,...rows.map(f=>[f.salesScore,f.distanceKm.toFixed(3),f.group,f.name,f.pref,f.city,f.address,f.phone,f.no,"未着手","","",""])].map(r=>r.map(csvCell).join(",")).join("\n");
+      const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sales_targets_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
+    }
     document.querySelector("#pref").addEventListener("change",async e=>{
       state.pref=e.target.value; state.city="すべて"; state.selected=null; tradeLayer.clearLayers();
       if(!state.pref){state.data=null;renderCities();renderFacilities();return}
@@ -319,6 +428,11 @@
     document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
+    document.querySelector("#salesTabButton").addEventListener("click",()=>{renderSalesList();switchTab("sales")});
+    document.querySelector("#demandTabButton").addEventListener("click",()=>{renderDemand();switchTab("demand")});
+    document.querySelector("#competitionTabButton").addEventListener("click",()=>{renderCompetition();switchTab("competition")});
+    document.querySelector("#exportSalesList").addEventListener("click",exportSalesCsv);
+    document.querySelector("#refreshSalesList").addEventListener("click",renderSalesList);
     window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
     function focusFacility(uid){
       if(!state.data)return;
