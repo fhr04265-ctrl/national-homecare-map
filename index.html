@@ -23,10 +23,18 @@
     .stat,.trade-result div,.selected{border:1px solid var(--line);border-radius:8px;background:#fafcff;padding:10px;font-size:11px;color:var(--muted)}
     .stat b,.trade-result b{display:block;color:var(--ink);font-size:18px;line-height:1.15}
     .checks{display:grid;gap:6px;max-height:260px;overflow:auto;padding-right:4px}
+    .layer-primary{display:grid;gap:7px;margin-bottom:8px}
+    .layer-primary .check{border:1px solid var(--line);border-radius:8px;padding:8px 9px;background:#fafcff;font-weight:800}
+    details.layer-more{border-top:1px solid var(--line);padding-top:8px}
+    details.layer-more summary{cursor:pointer;font-size:12px;font-weight:800;color:#344054;margin-bottom:8px}
     .check{display:flex;gap:8px;align-items:center;font-size:13px}
     .check input{width:16px;min-height:16px}
     .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto}
     .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .radius-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
+    .radius-chips button{min-height:34px;font-size:12px}
+    .radius-chips button.active{background:#eef4ff;border-color:var(--blue);color:var(--blue)}
+    .map-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
     .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
     .tabs button{font-size:12px;padding:7px 6px}
     .tabs button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -47,11 +55,12 @@
     .lead-table th{color:#344054;font-size:11px}
     .lead-table a{color:var(--blue);font-weight:800;text-decoration:none}
     .score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900}
+    .mobile-nav{display:none}
     #map{height:100vh;min-height:720px}
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){.app{grid-template-columns:1fr;height:auto}.tabs{position:sticky;top:0;z-index:500;grid-template-columns:repeat(5,minmax(64px,1fr));overflow:auto}.tabs button{white-space:nowrap}#map{height:68vh;min-height:460px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}}
+    @media (max-width:900px){body{padding-bottom:58px}.app{grid-template-columns:1fr;height:auto}.tabs{display:none}#map{height:64vh;min-height:430px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -78,6 +87,10 @@
           <select id="city"><option value="すべて">市区町村すべて</option></select>
         </div>
         <input id="q" type="search" placeholder="事業所名・法人名・住所で検索" style="margin-top:8px">
+        <div class="map-quick">
+          <button id="locateMe" type="button">現在地</button>
+          <button id="fitVisible" type="button">表示範囲へ</button>
+        </div>
       </section>
 
       <section class="panel">
@@ -100,6 +113,12 @@
         <div class="grid2" style="margin-top:8px">
           <input id="tradeRadius" type="number" min="0.1" step="0.1" value="2" aria-label="商圏半径km">
           <button id="drawTrade" type="button">商圏を描画</button>
+        </div>
+        <div id="radiusChips" class="radius-chips" aria-label="商圏半径">
+          <button type="button" data-radius="1">1km</button>
+          <button type="button" data-radius="2" class="active">2km</button>
+          <button type="button" data-radius="3">3km</button>
+          <button type="button" data-radius="5">5km</button>
         </div>
         <div class="actions">
           <button id="exportTrade" type="button">円内CSV出力</button>
@@ -160,12 +179,20 @@
     </aside>
     <div id="map"></div>
   </div>
+  <nav class="mobile-nav" aria-label="スマホ表示切替">
+    <button type="button" data-tab="map" class="active">地図</button>
+    <button type="button" data-tab="analysis">商圏</button>
+    <button type="button" data-tab="sales">リスト</button>
+    <button type="button" data-tab="demand">需要</button>
+    <button type="button" data-tab="competition">競合</button>
+  </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="national_homecare_data/manifest.js"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
     const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null };
+    const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
@@ -186,12 +213,20 @@
       document.querySelector("#salesTabButton").setAttribute("aria-selected",String(tab==="sales"));
       document.querySelector("#demandTabButton").setAttribute("aria-selected",String(tab==="demand"));
       document.querySelector("#competitionTabButton").setAttribute("aria-selected",String(tab==="competition"));
+      document.querySelectorAll(".mobile-nav button").forEach(button=>button.classList.toggle("active",button.dataset.tab===tab));
+      if(tab==="map") setTimeout(()=>map.invalidateSize(),50);
     }
     function fillPref(){
       document.querySelector("#pref").innerHTML = '<option value="">都道府県を選択</option>' + manifest.prefectures.map(p => '<option value="'+p.code+'">'+p.name+'（'+yen(p.count)+'）</option>').join("");
     }
     function fillLayers(){
-      document.querySelector("#layers").innerHTML = manifest.groups.map(g => '<label class="check"><input type="checkbox" data-group="'+g+'"><span class="dot" style="background:'+colorFor(g)+'"></span>'+g+'</label>').join("");
+      const primary = priorityGroups.filter(g=>manifest.groups.includes(g));
+      const other = manifest.groups.filter(g=>!priorityGroups.includes(g));
+      document.querySelector("#layers").innerHTML =
+        '<div class="layer-primary">'+primary.map(g => '<label class="check"><input type="checkbox" data-group="'+g+'"><span class="dot" style="background:'+colorFor(g)+'"></span>'+g+'</label>').join("")+'</div>'+
+        '<details class="layer-more"><summary>その他のサービスを表示</summary>'+
+        other.map(g => '<label class="check"><input type="checkbox" data-group="'+g+'"><span class="dot" style="background:'+colorFor(g)+'"></span>'+g+'</label>').join("")+
+        '</details>';
       document.querySelectorAll("#layers input").forEach(input => input.addEventListener("change", () => {
         state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
         renderFacilities();
@@ -236,6 +271,15 @@
       document.querySelector("#visibleCount").textContent=yen(rows.length);
       document.querySelector("#nursingCount").textContent=yen(rows.filter(f=>f.code==="130").length);
       document.querySelector("#cmCount").textContent=yen(rows.filter(f=>f.code==="430").length);
+    }
+    function fitVisibleFacilities(){
+      const rows=filtered();
+      if(!rows.length)return;
+      map.fitBounds(L.latLngBounds(rows.map(f=>[f.lat,f.lng])),{padding:[24,24],maxZoom:14});
+    }
+    function updateRadiusChips(){
+      const value=String(Number(document.querySelector("#tradeRadius").value||0));
+      document.querySelectorAll("#radiusChips button").forEach(button=>button.classList.toggle("active",button.dataset.radius===value));
     }
     function renderCities(){
       const counts=state.data?.cityCounts||{};
@@ -423,7 +467,12 @@
     document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;renderFacilities()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
-    document.querySelector("#tradeRadius").addEventListener("change",drawTradeArea);
+    document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
+    document.querySelectorAll("#radiusChips button").forEach(button=>button.addEventListener("click",()=>{
+      document.querySelector("#tradeRadius").value=button.dataset.radius;
+      updateRadiusChips();
+      drawTradeArea();
+    }));
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
     document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
@@ -431,6 +480,25 @@
     document.querySelector("#salesTabButton").addEventListener("click",()=>{renderSalesList();switchTab("sales")});
     document.querySelector("#demandTabButton").addEventListener("click",()=>{renderDemand();switchTab("demand")});
     document.querySelector("#competitionTabButton").addEventListener("click",()=>{renderCompetition();switchTab("competition")});
+    document.querySelectorAll(".mobile-nav button").forEach(button=>button.addEventListener("click",()=>{
+      const tab=button.dataset.tab;
+      if(tab==="analysis")renderAnalysis();
+      if(tab==="sales")renderSalesList();
+      if(tab==="demand")renderDemand();
+      if(tab==="competition")renderCompetition();
+      switchTab(tab);
+      window.scrollTo({top:0,behavior:"smooth"});
+    }));
+    document.querySelector("#fitVisible").addEventListener("click",fitVisibleFacilities);
+    document.querySelector("#locateMe").addEventListener("click",()=>{
+      if(!navigator.geolocation)return;
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat=pos.coords.latitude,lng=pos.coords.longitude;
+        map.setView([lat,lng],14);
+        L.circleMarker([lat,lng],{radius:7,color:"#0b57d0",fillColor:"#0b57d0",fillOpacity:.8,weight:2}).addTo(map).bindPopup("現在地").openPopup();
+        switchTab("map");
+      });
+    });
     document.querySelector("#exportSalesList").addEventListener("click",exportSalesCsv);
     document.querySelector("#refreshSalesList").addEventListener("click",renderSalesList);
     window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
