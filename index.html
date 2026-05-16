@@ -97,7 +97,7 @@
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
     const tradeLayer = L.layerGroup().addTo(map);
-    const colors = {"訪問看護":"#d92d20","居宅介護支援":"#0b57d0","病院":"#111827","訪問診療対応診療所":"#64748b"};
+    const colors = {"居宅介護支援":"#0057ff","病院":"#111111","訪問診療対応診療所":"#ff8a00","訪問看護":"#e6002e"};
     function yen(n){return Number(n||0).toLocaleString("ja-JP")}
     function colorFor(key){if(colors[key])return colors[key];let h=0;for(let i=0;i<key.length;i++)h=((h<<5)-h+key.charCodeAt(i))|0;return "hsl("+(Math.abs(h)%360)+" 62% 38%)"}
     function distanceKm(aLat,aLng,bLat,bLng){const r=6371,dLat=(bLat-aLat)*Math.PI/180,dLng=(bLng-aLng)*Math.PI/180,s1=Math.sin(dLat/2),s2=Math.sin(dLng/2),a=s1*s1+Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*s2*s2;return 2*r*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
