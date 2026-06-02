@@ -108,6 +108,9 @@
             <option value="habitableElderly75Density">可住地75歳以上密度</option>
             <option value="elderly75PerNursing">75歳以上人口 / 訪問看護</option>
             <option value="facilityCount">施設集積</option>
+            <option value="meshDensity2020">500mメッシュ 人口密度（東京）</option>
+            <option value="meshElderly75Density2025">500mメッシュ 75歳以上密度（東京・2025推計）</option>
+            <option value="meshPopulation2020">500mメッシュ 総人口（東京）</option>
           </select>
           <div id="marketLegend" class="legend-box">市区町村を選択すると、人口密度などの変数を地図へ重ねられます。</div>
         </div>
@@ -227,7 +230,7 @@
   <script src="national_homecare_data/manifest.js"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshTradeEstimate:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
@@ -279,6 +282,22 @@
         document.body.appendChild(script);
       });
     }
+    function loadMesh(code){
+      if(code!=="13") return Promise.resolve(null);
+      if(window.NATIONAL_HOMECARE_MESH && window.NATIONAL_HOMECARE_MESH[code]) {
+        state.meshData=window.NATIONAL_HOMECARE_MESH[code];
+        return Promise.resolve(state.meshData);
+      }
+      if(state.meshLoading) return state.meshLoading;
+      state.meshLoading = new Promise((resolve,reject)=>{
+        const script=document.createElement("script");
+        script.src="national_homecare_data/mesh_"+code+"_500m.js?v="+encodeURIComponent(manifest.generatedAt);
+        script.onload=()=>{state.meshData=window.NATIONAL_HOMECARE_MESH?.[code]||null;resolve(state.meshData)};
+        script.onerror=()=>{state.meshData=null;resolve(null)};
+        document.body.appendChild(script);
+      });
+      return state.meshLoading;
+    }
     function filtered(){
       if(!state.data)return [];
       const q=state.q.trim().toLowerCase();
@@ -316,15 +335,96 @@
         elderly75Density:"75歳以上人口密度",
         habitableElderly75Density:"可住地75歳以上密度",
         elderly75PerNursing:"75歳以上人口 / 訪問看護",
-        facilityCount:"施設集積"
+        facilityCount:"施設集積",
+        meshDensity2020:"500mメッシュ 人口密度（2020）",
+        meshElderly75Density2025:"500mメッシュ 75歳以上密度（2025推計）",
+        meshPopulation2020:"500mメッシュ 総人口（2020）"
       }[key] || "";
     }
-    function renderMarketLayer(){
+    function isMeshVariable(key){
+      return key==="meshDensity2020" || key==="meshElderly75Density2025" || key==="meshPopulation2020";
+    }
+    function meshValue(row,key){
+      if(key==="meshElderly75Density2025") return row.d75_25||0;
+      if(key==="meshPopulation2020") return row.p20||0;
+      return row.d20||0;
+    }
+    function meshColor(rate){
+      if(rate>=.82)return "#d85b9f";
+      if(rate>=.62)return "#f36f63";
+      if(rate>=.42)return "#f5ba5b";
+      if(rate>=.2)return "#fff06a";
+      return "#7bb8ff";
+    }
+    function meshRowsInScope(){
+      if(!state.meshData)return [];
+      let rows=state.meshData.rows||[];
+      if(state.city && state.city!=="すべて") rows=rows.filter(r=>(r.city||"")===state.city);
+      if(state.selected && Number(document.querySelector("#tradeRadius").value||0)>0){
+        const radius=Number(document.querySelector("#tradeRadius").value||0);
+        rows=rows.filter(r=>distanceKm(state.selected.lat,state.selected.lng,r.c[0],r.c[1])<=radius);
+      }
+      return rows;
+    }
+    function aggregateMeshPopulation(){
+      const rows=meshRowsInScope();
+      if(!rows.length)return null;
+      const population=rows.reduce((sum,r)=>sum+(r.p20||0),0);
+      const elderly75=rows.reduce((sum,r)=>sum+(r.e75_25||0),0);
+      const elderly=rows.reduce((sum,r)=>sum+(r.e65_25||0),0);
+      const areaKm2=rows.reduce((sum,r)=>sum+(r.a||0),0);
+      return {
+        population:Math.round(population),
+        elderly:Math.round(elderly),
+        elderly75:Math.round(elderly75),
+        elderlySingleHouseholds:0,
+        elderlyCoupleHouseholds:0,
+        areaKm2,
+        habitableAreaKm2:0,
+        populationDensity:areaKm2?Math.round(population/areaKm2):0,
+        elderly75Density:areaKm2?Math.round(elderly75/areaKm2):0,
+        habitableElderly75Density:areaKm2?Math.round(elderly75/areaKm2):0,
+        careNeed:Math.round(elderly75*0.32),
+        matched:rows.length,
+        cities:new Set(rows.map(r=>r.city||r.cityCode)).size,
+        source:"500mメッシュ",
+      };
+    }
+    async function renderMarketLayer(){
       marketLayer.clearLayers();
       const key=document.querySelector("#marketVariable").value;
       const legend=document.querySelector("#marketLegend");
       if(!state.data||!key){
         legend.innerHTML="市区町村を選択すると、人口密度などの変数を地図へ重ねられます。";
+        return;
+      }
+      if(isMeshVariable(key)){
+        const mesh=await loadMesh(state.pref);
+        if(!mesh){
+          legend.innerHTML="500mメッシュは現在、東京都のみ試作対応です。東京都を選択してください。";
+          return;
+        }
+        const scoped=meshRowsInScope().filter(r=>meshValue(r,key)>0);
+        if(!scoped.length){
+          legend.innerHTML="商圏または市区町村内に表示できる500mメッシュがありません。";
+          return;
+        }
+        if(state.city==="すべて" && !state.selected && scoped.length>2500){
+          legend.innerHTML="500mメッシュは細かいため、市区町村を選択するか商圏を描画すると表示します。";
+          return;
+        }
+        const values=scoped.map(r=>meshValue(r,key)).sort((a,b)=>a-b);
+        const max=values[Math.max(0,Math.floor(values.length*.94)-1)]||values[values.length-1]||1;
+        const label=marketVariableLabel(key);
+        legend.innerHTML='<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>青=低 / 黄=中 / 赤紫=高<br>表示: '+yen(scoped.length)+'メッシュ<br><small>'+mesh.note+'</small>';
+        scoped.forEach(r=>{
+          const value=meshValue(r,key);
+          const rate=clamp(value/max,0,1);
+          const color=meshColor(rate);
+          L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.16+rate*.48})
+            .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+'<br>'+(r.city||""))
+            .addTo(marketLayer);
+        });
         return;
       }
       const stats=(state.data.cityStats||[]).filter(c=>c.center&&Number(c[key])>0);
@@ -380,6 +480,7 @@
       return key?pop[key]:null;
     }
     function estimateTradePopulation(rows){
+      if(state.meshTradeEstimate)return state.meshTradeEstimate;
       const byCity={};
       rows.forEach(f=>{const city=f.city||"市区町村未設定"; byCity[city]=(byCity[city]||0)+1});
       const loadedByCity=state.data.facilities.reduce((memo,f)=>{const city=f.city||"市区町村未設定"; memo[city]=(memo[city]||0)+1; return memo},{});
@@ -471,6 +572,7 @@
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
       const elderlyPerNursing=nursing?Math.round(est.elderly/nursing):"-";
+      const estimateUnit=est.source==="500mメッシュ"?"500mメッシュ集計":"市区町村按分";
       document.querySelector("#analysisSummary").innerHTML=
         '<div class="analysis-card"><b><span class="score-badge">'+score.grade+'</span> '+score.overall+'</b>商圏総合スコア</div>'+
         '<div class="analysis-card"><b>'+yen(rows.length)+'</b>商圏内施設数</div>'+
@@ -478,7 +580,7 @@
         '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>推計75歳以上人口</div>'+
         '<div class="analysis-card"><b>'+elderlyPerNursing+'</b>65歳以上/訪問看護</div>'+
         '<div class="analysis-card"><b>'+yen(est.population)+'</b>推計総人口</div>'+
-        '<div class="analysis-card"><b>'+est.matched+'/'+est.cities+'</b>人口推計に使えた市区町村</div>';
+        '<div class="analysis-card"><b>'+yen(est.matched)+'</b>'+estimateUnit+'</div>';
       document.querySelector("#tradeInsight").innerHTML=
         '<div class="insight-card"><strong>営業・企画判断: '+narrative.headline+'</strong>'+
         '<div>'+narrative.action+'</div>'+
@@ -570,14 +672,20 @@
       }).sort((a,b)=>b.potential-a.potential||b.count-a.count).slice(0,15);
       root.innerHTML=rows.map(r=>'<div class="city-row"><span><b>'+r.city+'</b><small>75歳以上 '+yen(r.pop.elderly75||0)+' / 75歳以上密度 '+yen(r.pop.elderly75Density||0)+' / 訪看 '+yen(r.nursing)+' / 居宅 '+yen(r.care)+' / 訪問診療 '+yen(r.clinics)+'</small></span><b>'+yen(r.potential)+'</b></div>').join("");
     }
-    function drawTradeArea(){
+    async function drawTradeArea(){
       tradeLayer.clearLayers();
       if(!state.selected)return;
       const radius=Number(document.querySelector("#tradeRadius").value||0);
       state.tradeRows=tradeFacilities();
+      state.meshTradeEstimate=null;
+      if(state.pref==="13"){
+        await loadMesh(state.pref);
+        state.meshTradeEstimate=aggregateMeshPopulation();
+      }
       L.circle([state.selected.lat,state.selected.lng],{radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.75,weight:2}).addTo(tradeLayer);
       document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+state.data.prefName+'</b>抽出対象</div>';
       renderAnalysis();
+      if(isMeshVariable(document.querySelector("#marketVariable").value)) renderMarketLayer();
     }
     function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
     function exportTradeCsv(){
@@ -598,6 +706,7 @@
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
       state.pref=e.target.value; state.city="すべて"; state.selected=null; tradeLayer.clearLayers();
+      state.meshData=null; state.meshLoading=null; state.meshTradeEstimate=null;
       if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();return}
       state.data=await loadPref(state.pref);
       renderCities();
@@ -607,7 +716,7 @@
       renderMarketLayer();
       renderCitySummary();
     });
-    document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;renderFacilities();renderCitySummary()});
+    document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;state.meshTradeEstimate=null;renderFacilities();renderCitySummary();renderMarketLayer()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
@@ -618,7 +727,7 @@
       drawTradeArea();
     }));
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
-    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis()});
+    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis();renderMarketLayer()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
     document.querySelector("#salesTabButton").addEventListener("click",()=>{renderSalesList();switchTab("sales")});
