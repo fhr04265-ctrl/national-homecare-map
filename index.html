@@ -35,6 +35,9 @@
     .radius-chips button{min-height:34px;font-size:12px}
     .radius-chips button.active{background:#eef4ff;border-color:var(--blue);color:var(--blue)}
     .map-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+    .variable-row{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
+    .legend-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:11px;color:var(--muted);line-height:1.45}
+    .legend-scale{height:8px;border-radius:99px;background:linear-gradient(90deg,#e8f1ff,#88b8ff,#0057ff);margin:6px 0}
     .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
     .tabs button{font-size:12px;padding:7px 6px}
     .tabs button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -96,6 +99,18 @@
           <select id="city"><option value="すべて">市区町村すべて</option></select>
         </div>
         <input id="q" type="search" placeholder="事業所名・法人名・住所で検索" style="margin-top:8px">
+        <div class="variable-row">
+          <select id="marketVariable" aria-label="市場変数レイヤー">
+            <option value="">市場変数レイヤーなし</option>
+            <option value="populationDensity">人口密度</option>
+            <option value="habitablePopulationDensity">可住地人口密度</option>
+            <option value="elderly75Density">75歳以上人口密度</option>
+            <option value="habitableElderly75Density">可住地75歳以上密度</option>
+            <option value="elderly75PerNursing">75歳以上人口 / 訪問看護</option>
+            <option value="facilityCount">施設集積</option>
+          </select>
+          <div id="marketLegend" class="legend-box">市区町村を選択すると、人口密度などの変数を地図へ重ねられます。</div>
+        </div>
         <div class="map-quick">
           <button id="locateMe" type="button">現在地</button>
           <button id="fitVisible" type="button">表示範囲へ</button>
@@ -216,6 +231,7 @@
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+    const marketLayer = L.layerGroup().addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
     const tradeLayer = L.layerGroup().addTo(map);
     const markerByUid = new Map();
@@ -293,6 +309,43 @@
       document.querySelector("#nursingCount").textContent=yen(rows.filter(f=>f.code==="130").length);
       document.querySelector("#cmCount").textContent=yen(rows.filter(f=>f.code==="430").length);
     }
+    function marketVariableLabel(key){
+      return {
+        populationDensity:"人口密度",
+        habitablePopulationDensity:"可住地人口密度",
+        elderly75Density:"75歳以上人口密度",
+        habitableElderly75Density:"可住地75歳以上密度",
+        elderly75PerNursing:"75歳以上人口 / 訪問看護",
+        facilityCount:"施設集積"
+      }[key] || "";
+    }
+    function renderMarketLayer(){
+      marketLayer.clearLayers();
+      const key=document.querySelector("#marketVariable").value;
+      const legend=document.querySelector("#marketLegend");
+      if(!state.data||!key){
+        legend.innerHTML="市区町村を選択すると、人口密度などの変数を地図へ重ねられます。";
+        return;
+      }
+      const stats=(state.data.cityStats||[]).filter(c=>c.center&&Number(c[key])>0);
+      if(!stats.length){
+        legend.innerHTML="この都道府県では選択した変数のデータがありません。";
+        return;
+      }
+      const values=stats.map(c=>Number(c[key]||0)).sort((a,b)=>a-b);
+      const max=values[Math.max(0,Math.floor(values.length*.92)-1)]||values[values.length-1]||1;
+      const label=marketVariableLabel(key);
+      legend.innerHTML='<b>'+label+'</b><div class="legend-scale"></div>薄い=低い / 濃い=高い（市区町村代表点）';
+      stats.forEach(c=>{
+        const value=Number(c[key]||0);
+        const rate=clamp(value/max,0.08,1);
+        const radius=700+rate*2600;
+        const color=rate>.7?"#0057ff":rate>.4?"#4f8dff":"#9cc4ff";
+        L.circle(c.center,{radius,color,fillColor:color,fillOpacity:.12+rate*.26,opacity:.45,weight:1})
+          .bindPopup('<b>'+c.city+'</b><br>'+label+': '+yen(Math.round(value))+'<br>75歳以上: '+yen(c.elderly75)+'<br>訪問看護: '+yen(c.visitNursing)+'<br>居宅介護支援: '+yen(c.careManagers))
+          .addTo(marketLayer);
+      });
+    }
     function fitVisibleFacilities(){
       const rows=filtered();
       if(!rows.length)return;
@@ -330,7 +383,7 @@
       const byCity={};
       rows.forEach(f=>{const city=f.city||"市区町村未設定"; byCity[city]=(byCity[city]||0)+1});
       const loadedByCity=state.data.facilities.reduce((memo,f)=>{const city=f.city||"市区町村未設定"; memo[city]=(memo[city]||0)+1; return memo},{});
-      let population=0, elderly=0, elderly75=0, elderlySingleHouseholds=0, elderlyCoupleHouseholds=0, matched=0;
+      let population=0, elderly=0, elderly75=0, elderlySingleHouseholds=0, elderlyCoupleHouseholds=0, areaKm2=0, habitableAreaKm2=0, matched=0;
       Object.entries(byCity).forEach(([city,count])=>{
         const pop=populationForCity(city);
         const base=loadedByCity[city]||count;
@@ -341,9 +394,11 @@
         elderly75+=pop.elderly75*ratio;
         elderlySingleHouseholds+=(pop.elderlySingleHouseholds||0)*ratio;
         elderlyCoupleHouseholds+=(pop.elderlyCoupleHouseholds||0)*ratio;
+        areaKm2+=(pop.areaKm2||0)*ratio;
+        habitableAreaKm2+=(pop.habitableAreaKm2||0)*ratio;
         matched++;
       });
-      return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),elderlySingleHouseholds:Math.round(elderlySingleHouseholds),elderlyCoupleHouseholds:Math.round(elderlyCoupleHouseholds),careNeed:Math.round(elderly75*0.32),matched,cities:Object.keys(byCity).length};
+      return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),elderlySingleHouseholds:Math.round(elderlySingleHouseholds),elderlyCoupleHouseholds:Math.round(elderlyCoupleHouseholds),areaKm2,habitableAreaKm2,populationDensity:areaKm2?Math.round(population/areaKm2):0,elderly75Density:areaKm2?Math.round(elderly75/areaKm2):0,habitableElderly75Density:habitableAreaKm2?Math.round(elderly75/habitableAreaKm2):0,careNeed:Math.round(elderly75*0.32),matched,cities:Object.keys(byCity).length};
     }
     function tradeCounts(){
       return (state.tradeRows||[]).reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
@@ -355,12 +410,14 @@
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
       const demand=clamp(Math.round((est.elderly75||0)/180),0,100);
+      const shortage=clamp(Math.round(((est.elderly75||0)/Math.max(nursing,1))/40),0,100);
       const referral=clamp(Math.round(care*3.2 + clinics*5),0,100);
       const medical=clamp(Math.round(hospitals*7 + clinics*6),0,100);
       const competition=clamp(Math.round(100 - nursing*5 + ((est.elderly75||0)/Math.max(nursing,1))/90),0,100);
-      const overall=Math.round(demand*.35 + referral*.25 + medical*.2 + competition*.2);
+      const access=clamp(Math.round((care+hospitals+clinics)*2.2 + (est.population||0)/8000),0,100);
+      const overall=Math.round(demand*.28 + shortage*.22 + referral*.2 + competition*.18 + access*.12);
       const grade=overall>=78?"A":overall>=60?"B":overall>=42?"C":"D";
-      return {overall,grade,demand,referral,medical,competition,nursing,care,hospitals,clinics};
+      return {overall,grade,demand,shortage,referral,medical,competition,access,nursing,care,hospitals,clinics};
     }
     function tradeNarrative(score, est){
       const strengths=[];
@@ -369,6 +426,7 @@
       if(score.referral>=70)strengths.push("居宅介護支援・訪問診療の紹介元候補が多いです");
       if(score.medical>=65)strengths.push("病院・訪問診療対応診療所との医療連携余地があります");
       if(score.competition>=70)strengths.push("訪問看護の競合密度は相対的に低めです");
+      if(score.access>=70)strengths.push("施設集積があり、暫定アクセス指標は高めです");
       if(score.competition<45)cautions.push("訪問看護競合が多く、差別化訴求が必要です");
       if(score.referral<35)cautions.push("紹介元候補が少なめで、広域営業や医療連携開拓が必要です");
       if(score.demand<35)cautions.push("需要人口の厚みは限定的です");
@@ -429,9 +487,10 @@
         '</div>';
       document.querySelector("#scoreBreakdown").innerHTML=[
         ["需要",score.demand],
+        ["供給不足",score.shortage],
         ["紹介元",score.referral],
-        ["医療連携",score.medical],
-        ["競合余地",score.competition]
+        ["競合余地",score.competition],
+        ["アクセス暫定",score.access]
       ].map(([label,value])=>'<div class="score-line"><span>'+label+'</span><div class="meter"><i style="width:'+value+'%"></i></div><b>'+value+'</b></div>').join("");
       document.querySelector("#prioritySummary").innerHTML=
         '<div class="analysis-card"><b>'+yen(care)+'</b>居宅介護支援</div>'+
@@ -476,6 +535,8 @@
       root.innerHTML=
         '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>75歳以上人口</div>'+
         '<div class="analysis-card"><b>'+yen(est.careNeed)+'</b>要介護者数 暫定推計</div>'+
+        '<div class="analysis-card"><b>'+yen(est.populationDensity)+'</b>人口密度 人/km2</div>'+
+        '<div class="analysis-card"><b>'+yen(est.habitableElderly75Density)+'</b>可住地75歳以上密度</div>'+
         '<div class="analysis-card"><b>'+yen(est.elderlySingleHouseholds)+'</b>65歳以上単独世帯</div>'+
         '<div class="analysis-card"><b>'+yen(est.elderlyCoupleHouseholds)+'</b>高齢夫婦世帯</div>'+
         '<div class="analysis-card"><b>'+yen(nursing?Math.round(est.elderly75/nursing):0)+'</b>75歳以上/訪問看護</div>'+
@@ -507,7 +568,7 @@
         const potential=nursing?Math.round((pop.elderly75||0)/nursing):pop.elderly75||0;
         return {city,count,pop,nursing,care,clinics,potential};
       }).sort((a,b)=>b.potential-a.potential||b.count-a.count).slice(0,15);
-      root.innerHTML=rows.map(r=>'<div class="city-row"><span><b>'+r.city+'</b><small>75歳以上 '+yen(r.pop.elderly75||0)+' / 訪看 '+yen(r.nursing)+' / 居宅 '+yen(r.care)+' / 訪問診療 '+yen(r.clinics)+'</small></span><b>'+yen(r.potential)+'</b></div>').join("");
+      root.innerHTML=rows.map(r=>'<div class="city-row"><span><b>'+r.city+'</b><small>75歳以上 '+yen(r.pop.elderly75||0)+' / 75歳以上密度 '+yen(r.pop.elderly75Density||0)+' / 訪看 '+yen(r.nursing)+' / 居宅 '+yen(r.care)+' / 訪問診療 '+yen(r.clinics)+'</small></span><b>'+yen(r.potential)+'</b></div>').join("");
     }
     function drawTradeArea(){
       tradeLayer.clearLayers();
@@ -537,16 +598,18 @@
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
       state.pref=e.target.value; state.city="すべて"; state.selected=null; tradeLayer.clearLayers();
-      if(!state.pref){state.data=null;renderCities();renderFacilities();return}
+      if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();return}
       state.data=await loadPref(state.pref);
       renderCities();
       map.setView(state.data.center, state.pref==="01"?7:9);
       renderSelected(false);
       renderFacilities();
+      renderMarketLayer();
       renderCitySummary();
     });
     document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;renderFacilities();renderCitySummary()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
+    document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
     document.querySelectorAll("#radiusChips button").forEach(button=>button.addEventListener("click",()=>{
