@@ -452,6 +452,28 @@
       if(!rows.length)return;
       map.fitBounds(L.latLngBounds(rows.map(f=>[f.lat,f.lng])),{padding:[24,24],maxZoom:14});
     }
+    async function fitCityBounds(){
+      if(!state.data)return;
+      if(!state.city || state.city==="すべて"){
+        map.setView(state.data.center, state.pref==="01"?7:9);
+        return;
+      }
+      const facilityPoints = state.data.facilities
+        .filter(f=>(f.city||"市区町村未設定")===state.city)
+        .map(f=>[f.lat,f.lng]);
+      const meshAvailable = (manifest.meshes||[]).some(m=>m.prefCode===state.pref);
+      if(meshAvailable) await loadMesh(state.pref);
+      const meshBounds = state.meshData
+        ? (state.meshData.rows||[])
+            .filter(r=>(r.city||"")===state.city)
+            .map(r=>[[r.b[0],r.b[1]],[r.b[2],r.b[3]]])
+        : [];
+      if(facilityPoints.length || meshBounds.length){
+        const bounds = L.latLngBounds(facilityPoints);
+        meshBounds.forEach(pair=>bounds.extend(pair[0]).extend(pair[1]));
+        map.fitBounds(bounds,{padding:[28,28],maxZoom:14});
+      }
+    }
     function updateRadiusChips(){
       const value=String(Number(document.querySelector("#tradeRadius").value||0));
       document.querySelectorAll("#radiusChips button").forEach(button=>button.classList.toggle("active",button.dataset.radius===value));
@@ -717,7 +739,7 @@
       renderMarketLayer();
       renderCitySummary();
     });
-    document.querySelector("#city").addEventListener("change",e=>{state.city=e.target.value;state.meshTradeEstimate=null;renderFacilities();renderCitySummary();renderMarketLayer()});
+    document.querySelector("#city").addEventListener("change",async e=>{state.city=e.target.value;state.meshTradeEstimate=null;renderFacilities();renderCitySummary();await fitCityBounds();renderMarketLayer()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
