@@ -38,7 +38,7 @@
     .variable-row{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
     .legend-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:11px;color:var(--muted);line-height:1.45}
     .legend-scale{height:8px;border-radius:99px;background:linear-gradient(90deg,#e8f1ff,#88b8ff,#0057ff);margin:6px 0}
-    .tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
+    .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
     .tabs button{font-size:12px;padding:7px 6px}
     .tabs button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
     .tab-panel{display:none}
@@ -67,12 +67,20 @@
     .city-summary{display:grid;gap:6px}
     .city-row{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #edf1f7;padding:7px 0;font-size:12px}
     .city-row b{font-size:13px}
+    .compare-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+    .compare-card{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px;margin-top:8px}
+    .compare-card h3{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:7px}
+    .area-badge{display:inline-flex;width:24px;height:24px;border-radius:50%;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:900}
+    .compare-metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .compare-metric{border:1px solid var(--line);border-radius:8px;padding:7px;background:#f8fafc}
+    .compare-metric b{display:block;font-size:15px}
+    .compare-metric span{display:block;font-size:10px;color:var(--muted);margin-top:2px}
     .mobile-nav{display:none}
     #map{height:100vh;min-height:720px}
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){body{padding-bottom:58px}.app{grid-template-columns:1fr;height:auto}.tabs{display:none}#map{height:64vh;min-height:430px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
+    @media (max-width:900px){body{padding-bottom:58px}.app{grid-template-columns:1fr;height:auto}.tabs{display:none}#map{height:64vh;min-height:430px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -86,6 +94,7 @@
       <nav class="tabs" aria-label="表示切替">
         <button type="button" id="mapTabButton" aria-selected="true">地図</button>
         <button type="button" id="analysisTabButton" aria-selected="false">商圏分析</button>
+        <button type="button" id="compareTabButton" aria-selected="false">エリア比較</button>
         <button type="button" id="salesTabButton" aria-selected="false">営業リスト</button>
         <button type="button" id="demandTabButton" aria-selected="false">需要分析</button>
         <button type="button" id="competitionTabButton" aria-selected="false">競合分析</button>
@@ -182,6 +191,20 @@
         </section>
       </div>
 
+      <div id="compareTab" class="tab-panel">
+        <section class="panel">
+          <div class="label">最大3エリア比較</div>
+          <div class="selected">現在選択中の市区町村、または施設を中心に描画した商圏をA/B/Cとして登録できます。</div>
+          <div class="compare-actions">
+            <button id="addCityCompare" type="button">市区町村を追加</button>
+            <button id="addTradeCompare" type="button">商圏を追加</button>
+            <button id="exportCompare" type="button">比較CSV</button>
+            <button id="clearCompare" type="button">比較クリア</button>
+          </div>
+          <div id="compareList"></div>
+        </section>
+      </div>
+
       <div id="salesTab" class="tab-panel">
         <section class="panel">
           <div class="label">営業ターゲット</div>
@@ -225,6 +248,7 @@
   <nav class="mobile-nav" aria-label="スマホ表示切替">
     <button type="button" data-tab="map" class="active">地図</button>
     <button type="button" data-tab="analysis">商圏</button>
+    <button type="button" data-tab="compare">比較</button>
     <button type="button" data-tab="sales">リスト</button>
     <button type="button" data-tab="demand">需要</button>
     <button type="button" data-tab="competition">競合</button>
@@ -234,13 +258,14 @@
   <script src="national_homecare_data/manifest.js"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null, compareAreas:[] };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
     const marketLayer = L.layerGroup().addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
     const tradeLayer = L.layerGroup().addTo(map);
+    const compareLayer = L.layerGroup().addTo(map);
     const markerByUid = new Map();
     const colors = {"居宅介護支援":"#0057ff","病院":"#111111","訪問診療対応診療所":"#ff8a00","訪問看護":"#e6002e"};
     function yen(n){return Number(n||0).toLocaleString("ja-JP")}
@@ -249,11 +274,13 @@
     function switchTab(tab){
       document.querySelector("#mapTab").classList.toggle("active",tab==="map");
       document.querySelector("#analysisTab").classList.toggle("active",tab==="analysis");
+      document.querySelector("#compareTab").classList.toggle("active",tab==="compare");
       document.querySelector("#salesTab").classList.toggle("active",tab==="sales");
       document.querySelector("#demandTab").classList.toggle("active",tab==="demand");
       document.querySelector("#competitionTab").classList.toggle("active",tab==="competition");
       document.querySelector("#mapTabButton").setAttribute("aria-selected",String(tab==="map"));
       document.querySelector("#analysisTabButton").setAttribute("aria-selected",String(tab==="analysis"));
+      document.querySelector("#compareTabButton").setAttribute("aria-selected",String(tab==="compare"));
       document.querySelector("#salesTabButton").setAttribute("aria-selected",String(tab==="sales"));
       document.querySelector("#demandTabButton").setAttribute("aria-selected",String(tab==="demand"));
       document.querySelector("#competitionTabButton").setAttribute("aria-selected",String(tab==="competition"));
@@ -428,6 +455,104 @@
         cities:new Set(rows.map(r=>r.city||r.cityCode)).size,
         source:"500mメッシュ",
       };
+    }
+    const compareColors=["#0b57d0","#d92d20","#0f8a5f"];
+    function areaMeshRows(area){
+      if(!state.meshData)return [];
+      let rows=state.meshData.rows||[];
+      if(area.type==="city") return rows.filter(r=>(r.city||"")===area.city);
+      if(area.type==="trade") return rows.filter(r=>distanceKm(area.center[0],area.center[1],r.c[0],r.c[1])<=area.radius);
+      return [];
+    }
+    function areaFacilities(area){
+      if(!state.data)return [];
+      if(area.type==="city") return state.data.facilities.filter(f=>(f.city||"市区町村未設定")===area.city);
+      if(area.type==="trade") return state.data.facilities.filter(f=>distanceKm(area.center[0],area.center[1],f.lat,f.lng)<=area.radius);
+      return [];
+    }
+    function summarizeArea(area){
+      const meshRows=areaMeshRows(area);
+      const facilities=areaFacilities(area);
+      const population=meshRows.reduce((sum,r)=>sum+(r.p20||0),0);
+      const elderly75=meshRows.reduce((sum,r)=>sum+(r.e75_25||0),0);
+      const areaKm2=meshRows.reduce((sum,r)=>sum+(r.a||0),0);
+      const visitNursing=facilities.filter(f=>f.code==="130").length;
+      const careManagers=facilities.filter(f=>f.code==="430").length;
+      const hospitals=facilities.filter(f=>f.code==="medical_hospital").length;
+      const homeCareClinics=facilities.filter(f=>f.code==="medical_clinic").length;
+      const medicalPartners=hospitals+homeCareClinics;
+      const potential=visitNursing?Math.round(elderly75/visitNursing):Math.round(elderly75);
+      return {meshCount:meshRows.length, facilityCount:facilities.length, population:Math.round(population), elderly75:Math.round(elderly75), areaKm2, populationDensity:areaKm2?Math.round(population/areaKm2):0, elderly75Density:areaKm2?Math.round(elderly75/areaKm2):0, visitNursing, careManagers, hospitals, homeCareClinics, medicalPartners, potential};
+    }
+    function drawCompareAreas(){
+      compareLayer.clearLayers();
+      state.compareAreas.forEach((area,index)=>{
+        const color=compareColors[index%compareColors.length];
+        if(area.type==="trade"){
+          L.circle(area.center,{radius:area.radius*1000,color,fillColor:color,fillOpacity:.06,opacity:.9,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
+        } else {
+          const rows=areaMeshRows(area);
+          if(rows.length){
+            const bounds=L.latLngBounds([]);
+            rows.forEach(r=>bounds.extend([r.b[0],r.b[1]]).extend([r.b[2],r.b[3]]));
+            L.rectangle(bounds,{color,fillColor:color,fillOpacity:.04,opacity:.9,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
+          }
+        }
+      });
+    }
+    function renderCompare(){
+      const root=document.querySelector("#compareList");
+      drawCompareAreas();
+      if(!state.compareAreas.length){
+        root.innerHTML='<div class="selected">Add a municipality or trade area. Up to 3 areas can be compared.</div>';
+        return;
+      }
+      root.innerHTML=state.compareAreas.map((area,index)=>{
+        const s=area.summary||summarizeArea(area);
+        area.summary=s;
+        const badge=String.fromCharCode(65+index);
+        const color=compareColors[index%compareColors.length];
+        return '<div class="compare-card"><h3><span class="area-badge" style="background:'+color+'">'+badge+'</span>'+area.label+'</h3><small>'+area.description+'</small><div class="compare-metrics">'+
+          '<div class="compare-metric"><b>'+yen(s.population)+'</b><span>Population</span></div>'+
+          '<div class="compare-metric"><b>'+yen(s.elderly75)+'</b><span>Age 75+</span></div>'+
+          '<div class="compare-metric"><b>'+yen(s.visitNursing)+'</b><span>Visit nursing</span></div>'+
+          '<div class="compare-metric"><b>'+yen(s.careManagers)+'</b><span>Care managers</span></div>'+
+          '<div class="compare-metric"><b>'+yen(s.medicalPartners)+'</b><span>Medical partners</span></div>'+
+          '<div class="compare-metric"><b>'+yen(s.potential)+'</b><span>75+ / VN</span></div>'+
+          '</div><div class="actions" style="margin-top:8px"><button type="button" onclick="removeCompareArea('+index+')">Remove</button></div></div>';
+      }).join("");
+    }
+    async function addCompareArea(area){
+      if(!state.data || !state.pref)return;
+      if(state.compareAreas.length>=3) state.compareAreas.shift();
+      await loadMesh(state.pref);
+      area.pref=state.pref;
+      area.id=Date.now()+"-"+Math.random().toString(16).slice(2);
+      area.summary=summarizeArea(area);
+      state.compareAreas.push(area);
+      renderCompare();
+      switchTab("compare");
+    }
+    async function addCityCompare(){
+      if(!state.data || state.city==="すべて")return;
+      await addCompareArea({type:"city", city:state.city, label:state.city, description:state.data.prefName+" / municipality"});
+    }
+    async function addTradeCompare(){
+      if(!state.data || !state.selected)return;
+      const radius=Number(document.querySelector("#tradeRadius").value||0);
+      if(!radius)return;
+      await addCompareArea({type:"trade", center:[state.selected.lat,state.selected.lng], radius, label:state.selected.name, description:state.data.prefName+" / "+radius+"km trade area"});
+    }
+    function exportCompareCsv(){
+      if(!state.compareAreas.length)return;
+      const header=["Area","Type","Name","Description","Population","Age75Plus","PopulationDensity","Age75PlusDensity","Facilities","VisitNursing","CareManagers","Hospitals","HomeCareClinics","MedicalPartners","Age75PlusPerVisitNursing"];
+      const rows=state.compareAreas.map((area,index)=>{
+        const s=area.summary||summarizeArea(area);
+        return [String.fromCharCode(65+index),area.type,area.label,area.description,s.population,s.elderly75,s.populationDensity,s.elderly75Density,s.facilityCount,s.visitNursing,s.careManagers,s.hospitals,s.homeCareClinics,s.medicalPartners,s.potential];
+      });
+      const csv=[header,...rows].map(r=>r.map(csvCell).join(",")).join("\n");
+      const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="area_compare_"+(state.data?.prefName||"")+".csv";a.click();URL.revokeObjectURL(a.href);
     }
     async function renderMarketLayer(){
       marketLayer.clearLayers();
@@ -766,7 +891,7 @@
       const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sales_targets_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
-      state.pref=e.target.value; state.city="すべて"; state.selected=null; tradeLayer.clearLayers();
+      state.pref=e.target.value; state.city="すべて"; state.selected=null; state.compareAreas=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
       state.meshData=null; state.meshLoading=null; state.meshSupplyData=null; state.meshSupplyLoading=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
       if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();return}
       state.data=await loadPref(state.pref);
@@ -776,6 +901,7 @@
       renderFacilities();
       renderMarketLayer();
       renderCitySummary();
+      renderCompare();
     });
     document.querySelector("#city").addEventListener("change",async e=>{state.city=e.target.value;state.meshTradeEstimate=null;renderFacilities();renderCitySummary();await fitCityBounds();renderMarketLayer()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
@@ -791,12 +917,14 @@
     document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis();renderMarketLayer()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
+    document.querySelector("#compareTabButton").addEventListener("click",()=>{renderCompare();switchTab("compare")});
     document.querySelector("#salesTabButton").addEventListener("click",()=>{renderSalesList();switchTab("sales")});
     document.querySelector("#demandTabButton").addEventListener("click",()=>{renderDemand();switchTab("demand")});
     document.querySelector("#competitionTabButton").addEventListener("click",()=>{renderCompetition();switchTab("competition")});
     document.querySelectorAll(".mobile-nav button").forEach(button=>button.addEventListener("click",()=>{
       const tab=button.dataset.tab;
       if(tab==="analysis")renderAnalysis();
+      if(tab==="compare")renderCompare();
       if(tab==="sales")renderSalesList();
       if(tab==="demand")renderDemand();
       if(tab==="competition")renderCompetition();
@@ -815,7 +943,12 @@
     });
     document.querySelector("#exportSalesList").addEventListener("click",exportSalesCsv);
     document.querySelector("#refreshSalesList").addEventListener("click",renderSalesList);
+    document.querySelector("#addCityCompare").addEventListener("click",addCityCompare);
+    document.querySelector("#addTradeCompare").addEventListener("click",addTradeCompare);
+    document.querySelector("#exportCompare").addEventListener("click",exportCompareCsv);
+    document.querySelector("#clearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderCompare()});
     window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
+    window.removeCompareArea=index=>{state.compareAreas.splice(index,1);renderCompare()};
     function focusFacility(uid){
       if(!state.data)return;
       const f=state.data.facilities.find(x=>x.uid===uid);
