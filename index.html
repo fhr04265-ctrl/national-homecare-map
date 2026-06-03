@@ -261,6 +261,10 @@
     const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null, compareAreas:[] };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
+    map.createPane("comparePane");
+    map.getPane("comparePane").style.zIndex = 360;
+    map.createPane("facilityPane");
+    map.getPane("facilityPane").style.zIndex = 650;
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
     const marketLayer = L.layerGroup().addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
@@ -369,7 +373,7 @@
       rows.forEach(f=>{
         const radius = f.code==="medical_hospital" ? 8 : f.code==="medical_clinic" ? 7 : f.code==="130" ? 6 : f.code==="430" ? 5 : 3;
         const weight = f.code==="medical_hospital" || f.code==="medical_clinic" ? 2 : 1;
-        const marker = L.circleMarker([f.lat,f.lng],{radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false)}).addTo(facilityLayer);
+        const marker = L.circleMarker([f.lat,f.lng],{pane:"facilityPane",radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false)}).addTo(facilityLayer);
         markerByUid.set(f.uid, marker);
         if (f.code==="medical_hospital" || f.code==="medical_clinic") marker.bringToFront();
       });
@@ -490,7 +494,7 @@
       state.compareAreas.forEach((area,index)=>{
         const color=compareColors[index%compareColors.length];
         if(area.type==="trade"){
-          L.circle(area.center,{radius:area.radius*1000,color,fillColor:color,fillOpacity:.06,opacity:.9,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
+          L.circle(area.center,{pane:"comparePane",radius:area.radius*1000,color,fillColor:color,fillOpacity:.06,opacity:.9,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
         } else {
           const rows=areaMeshRows(area);
           if(rows.length){
@@ -503,11 +507,11 @@
               const rate=max?clamp(raw/max,0,1):0;
               const fill=max?meshColor(rate):color;
               const opacity=max?(.12+rate*.42):.16;
-              L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:fill,fillOpacity:opacity})
+              L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{pane:"comparePane",stroke:false,fillColor:fill,fillOpacity:opacity})
                 .bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label+(max?'<br>'+marketVariableLabel(activeMarketKey)+': '+yen(Math.round(raw)):""))
                 .addTo(compareLayer);
             });
-            L.rectangle(bounds,{color,fill:false,opacity:.95,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
+            L.rectangle(bounds,{pane:"comparePane",color,fill:false,opacity:.95,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
           }
         }
       });
