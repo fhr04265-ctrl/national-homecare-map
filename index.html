@@ -102,9 +102,19 @@
         <div class="variable-row">
           <select id="marketVariable" aria-label="市場変数レイヤー">
             <option value="">市場変数レイヤーなし</option>
-            <option value="meshDensity2020">500mメッシュ 人口密度</option>
-            <option value="meshElderly75Density2025">500mメッシュ 75歳以上密度（2025推計）</option>
-            <option value="meshPopulation2020">500mメッシュ 総人口</option>
+            <optgroup label="需要を見る">
+              <option value="meshDensity2020">500mメッシュ 人口密度</option>
+              <option value="meshElderly75Density2025">500mメッシュ 75歳以上密度（2025推計）</option>
+              <option value="meshPopulation2020">500mメッシュ 総人口</option>
+            </optgroup>
+            <optgroup label="供給・連携先を見る">
+              <option value="meshVisitNursingSupply">訪問看護 供給メッシュ</option>
+              <option value="meshCareManagerSupply">居宅介護支援 連携先メッシュ</option>
+              <option value="meshMedicalPartnerSupply">病院・訪問診療 連携先メッシュ</option>
+            </optgroup>
+            <optgroup label="供給余地を見る">
+              <option value="meshElderly75PerVisitNursing">75歳以上人口 / 訪問看護</option>
+            </optgroup>
           </select>
           <div id="marketLegend" class="legend-box">市区町村を選択すると、人口密度などの変数を地図へ重ねられます。</div>
         </div>
@@ -224,7 +234,7 @@
   <script src="national_homecare_data/manifest.js"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshTradeEstimate:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
@@ -293,6 +303,24 @@
       });
       return state.meshLoading;
     }
+    function loadMeshSupply(code){
+      const available = (manifest.meshSupply||[]).some(m=>m.prefCode===code);
+      if(!available) return Promise.resolve(null);
+      if(window.NATIONAL_HOMECARE_MESH_SUPPLY && window.NATIONAL_HOMECARE_MESH_SUPPLY[code]) {
+        state.meshSupplyData=window.NATIONAL_HOMECARE_MESH_SUPPLY[code];
+        state.meshSupplyMap=new Map((state.meshSupplyData.rows||[]).map(row=>[row.id,row]));
+        return Promise.resolve(state.meshSupplyData);
+      }
+      if(state.meshSupplyLoading) return state.meshSupplyLoading;
+      state.meshSupplyLoading = new Promise((resolve)=>{
+        const script=document.createElement("script");
+        script.src="national_homecare_data/mesh_supply_"+code+"_500m.js?v="+encodeURIComponent(manifest.generatedAt);
+        script.onload=()=>{state.meshSupplyData=window.NATIONAL_HOMECARE_MESH_SUPPLY?.[code]||null;state.meshSupplyMap=state.meshSupplyData?new Map((state.meshSupplyData.rows||[]).map(row=>[row.id,row])):null;resolve(state.meshSupplyData)};
+        script.onerror=()=>{state.meshSupplyData=null;state.meshSupplyMap=null;resolve(null)};
+        document.body.appendChild(script);
+      });
+      return state.meshSupplyLoading;
+    }
     function filtered(){
       if(!state.data)return [];
       const q=state.q.trim().toLowerCase();
@@ -327,16 +355,38 @@
       return {
         meshDensity2020:"500mメッシュ 人口密度（2020）",
         meshElderly75Density2025:"500mメッシュ 75歳以上密度（2025推計）",
-        meshPopulation2020:"500mメッシュ 総人口（2020）"
+        meshPopulation2020:"500mメッシュ 総人口（2020）",
+        meshVisitNursingSupply:"訪問看護 供給メッシュ",
+        meshCareManagerSupply:"居宅介護支援 連携先メッシュ",
+        meshMedicalPartnerSupply:"病院・訪問診療 連携先メッシュ",
+        meshElderly75PerVisitNursing:"75歳以上人口 / 訪問看護"
       }[key] || "";
     }
     function isMeshVariable(key){
-      return key==="meshDensity2020" || key==="meshElderly75Density2025" || key==="meshPopulation2020";
+      return key==="meshDensity2020" || key==="meshElderly75Density2025" || key==="meshPopulation2020" || key==="meshVisitNursingSupply" || key==="meshCareManagerSupply" || key==="meshMedicalPartnerSupply" || key==="meshElderly75PerVisitNursing";
+    }
+    function requiresMeshSupply(key){
+      return key==="meshVisitNursingSupply" || key==="meshCareManagerSupply" || key==="meshMedicalPartnerSupply" || key==="meshElderly75PerVisitNursing";
+    }
+    function meshSupplyFor(row){
+      return state.meshSupplyMap?.get(row.id) || {};
     }
     function meshValue(row,key){
+      const supply=meshSupplyFor(row);
+      if(key==="meshVisitNursingSupply") return supply.vn||0;
+      if(key==="meshCareManagerSupply") return supply.cm||0;
+      if(key==="meshMedicalPartnerSupply") return (supply.hp||0)+(supply.hc||0);
+      if(key==="meshElderly75PerVisitNursing") return row.e75_25 ? Math.round(row.e75_25 / Math.max(1, supply.vn||0)) : 0;
       if(key==="meshElderly75Density2025") return row.d75_25||0;
       if(key==="meshPopulation2020") return row.p20||0;
       return row.d20||0;
+    }
+    function meshLegendNote(key,mesh,supply){
+      if(key==="meshVisitNursingSupply") return "濃いほど同一500mメッシュ内の訪問看護事業所が多いエリアです。<br><small>"+(supply?.note||"")+"</small>";
+      if(key==="meshCareManagerSupply") return "濃いほど同一500mメッシュ内の居宅介護支援事業者が多く、連携先候補が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
+      if(key==="meshMedicalPartnerSupply") return "濃いほど病院・訪問診療対応診療所が多く、医療連携の接点が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
+      if(key==="meshElderly75PerVisitNursing") return "濃いほど同一500mメッシュで75歳以上人口に対して訪問看護供給が薄い可能性があるエリアです。<br><small>初期版は同一500mメッシュ内の訪問看護数で割った暫定指標です。</small>";
+      return "<small>"+mesh.note+"</small>";
     }
     function meshColor(rate){
       if(rate>=.82)return "#d85b9f";
@@ -397,6 +447,14 @@
         legend.innerHTML="この都道府県の500mメッシュデータはまだ読み込まれていません。";
         return;
       }
+      let supply=null;
+      if(requiresMeshSupply(key)){
+        supply=await loadMeshSupply(state.pref);
+        if(!supply){
+          legend.innerHTML="この都道府県の供給メッシュデータはまだ読み込まれていません。";
+          return;
+        }
+      }
       const scoped=meshRowsInScope().filter(r=>meshValue(r,key)>0);
       if(!scoped.length){
         legend.innerHTML="商圏または市区町村内に表示できる500mメッシュがありません。";
@@ -409,13 +467,15 @@
       const values=scoped.map(r=>meshValue(r,key)).sort((a,b)=>a-b);
       const max=values[Math.max(0,Math.floor(values.length*.94)-1)]||values[values.length-1]||1;
       const label=marketVariableLabel(key);
-      legend.innerHTML='<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>青=低 / 黄=中 / 赤紫=高<br>表示: '+yen(scoped.length)+'メッシュ<br><small>'+mesh.note+'</small>';
+      legend.innerHTML='<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>青=低 / 黄=中 / 赤紫=高<br>表示: '+yen(scoped.length)+'メッシュ<br>'+meshLegendNote(key,mesh,supply);
       scoped.forEach(r=>{
         const value=meshValue(r,key);
         const rate=clamp(value/max,0,1);
         const color=meshColor(rate);
+        const s=meshSupplyFor(r);
+        const supplyText=requiresMeshSupply(key)?'<br>訪問看護: '+yen(s.vn||0)+' / 居宅介護支援: '+yen(s.cm||0)+'<br>病院: '+yen(s.hp||0)+' / 訪問診療対応診療所: '+yen(s.hc||0):'';
         L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.16+rate*.48})
-          .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+'<br>'+(r.city||""))
+          .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+supplyText+'<br>'+(r.city||""))
           .addTo(marketLayer);
       });
     }
@@ -707,7 +767,7 @@
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
       state.pref=e.target.value; state.city="すべて"; state.selected=null; tradeLayer.clearLayers();
-      state.meshData=null; state.meshLoading=null; state.meshTradeEstimate=null;
+      state.meshData=null; state.meshLoading=null; state.meshSupplyData=null; state.meshSupplyLoading=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
       if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();return}
       state.data=await loadPref(state.pref);
       renderCities();
