@@ -356,10 +356,17 @@
       if(!state.data)return [];
       const q=state.q.trim().toLowerCase();
       return state.data.facilities.filter(f=>{
-        if(state.city!=="すべて" && (f.city||"市区町村未設定")!==state.city)return false;
+        if(state.city!=="すべて" && (f.city||"市区町村未設定")!==state.city && !facilityInCompareAreas(f))return false;
         if(!state.groups.has(f.group))return false;
         if(!q)return true;
         return [f.name,f.corp,f.address,f.phone,f.serviceLabel,f.city].some(v=>String(v||"").toLowerCase().includes(q));
+      });
+    }
+    function facilityInCompareAreas(f){
+      return state.compareAreas.some(area=>{
+        if(area.type==="city") return (f.city||"市区町村未設定")===area.city;
+        if(area.type==="trade") return distanceKm(area.center[0],area.center[1],f.lat,f.lng)<=area.radius;
+        return false;
       });
     }
     function popup(f){
@@ -547,6 +554,7 @@
       area.id=Date.now()+"-"+Math.random().toString(16).slice(2);
       area.summary=summarizeArea(area);
       state.compareAreas.push(area);
+      renderFacilities();
       renderCompare();
       switchTab("compare");
     }
@@ -963,9 +971,9 @@
     document.querySelector("#addCityCompare").addEventListener("click",addCityCompare);
     document.querySelector("#addTradeCompare").addEventListener("click",addTradeCompare);
     document.querySelector("#exportCompare").addEventListener("click",exportCompareCsv);
-    document.querySelector("#clearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderCompare()});
+    document.querySelector("#clearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderFacilities();renderCompare()});
     window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
-    window.removeCompareArea=index=>{state.compareAreas.splice(index,1);renderCompare()};
+    window.removeCompareArea=index=>{state.compareAreas.splice(index,1);renderFacilities();renderCompare()};
     function focusFacility(uid){
       if(!state.data)return;
       const f=state.data.facilities.find(x=>x.uid===uid);
