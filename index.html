@@ -486,6 +486,7 @@
     }
     function drawCompareAreas(){
       compareLayer.clearLayers();
+      const activeMarketKey=document.querySelector("#marketVariable")?.value||"";
       state.compareAreas.forEach((area,index)=>{
         const color=compareColors[index%compareColors.length];
         if(area.type==="trade"){
@@ -494,11 +495,23 @@
           const rows=areaMeshRows(area);
           if(rows.length){
             const bounds=L.latLngBounds([]);
-            rows.forEach(r=>bounds.extend([r.b[0],r.b[1]]).extend([r.b[2],r.b[3]]));
-            L.rectangle(bounds,{color,fillColor:color,fillOpacity:.04,opacity:.9,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
+            const values=activeMarketKey && isMeshVariable(activeMarketKey) ? rows.map(r=>meshValue(r,activeMarketKey)).filter(v=>v>0).sort((a,b)=>a-b) : [];
+            const max=values.length ? (values[Math.max(0,Math.floor(values.length*.94)-1)]||values[values.length-1]||1) : 0;
+            rows.forEach(r=>{
+              bounds.extend([r.b[0],r.b[1]]).extend([r.b[2],r.b[3]]);
+              const raw=max?meshValue(r,activeMarketKey):0;
+              const rate=max?clamp(raw/max,0,1):0;
+              const fill=max?meshColor(rate):color;
+              const opacity=max?(.12+rate*.42):.16;
+              L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:fill,fillOpacity:opacity})
+                .bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label+(max?'<br>'+marketVariableLabel(activeMarketKey)+': '+yen(Math.round(raw)):""))
+                .addTo(compareLayer);
+            });
+            L.rectangle(bounds,{color,fill:false,opacity:.95,weight:3,dashArray:"6 5"}).bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label).addTo(compareLayer);
           }
         }
       });
+      facilityLayer.eachLayer(layer=>{ if(layer.bringToFront) layer.bringToFront(); });
     }
     function renderCompare(){
       const root=document.querySelector("#compareList");
