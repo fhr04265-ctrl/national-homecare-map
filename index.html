@@ -102,12 +102,6 @@
         <div class="variable-row">
           <select id="marketVariable" aria-label="市場変数レイヤー">
             <option value="">市場変数レイヤーなし</option>
-            <option value="populationDensity">人口密度</option>
-            <option value="habitablePopulationDensity">可住地人口密度</option>
-            <option value="elderly75Density">75歳以上人口密度</option>
-            <option value="habitableElderly75Density">可住地75歳以上密度</option>
-            <option value="elderly75PerNursing">75歳以上人口 / 訪問看護</option>
-            <option value="facilityCount">施設集積</option>
             <option value="meshDensity2020">500mメッシュ 人口密度</option>
             <option value="meshElderly75Density2025">500mメッシュ 75歳以上密度（2025推計）</option>
             <option value="meshPopulation2020">500mメッシュ 総人口</option>
@@ -331,12 +325,6 @@
     }
     function marketVariableLabel(key){
       return {
-        populationDensity:"人口密度",
-        habitablePopulationDensity:"可住地人口密度",
-        elderly75Density:"75歳以上人口密度",
-        habitableElderly75Density:"可住地75歳以上密度",
-        elderly75PerNursing:"75歳以上人口 / 訪問看護",
-        facilityCount:"施設集積",
         meshDensity2020:"500mメッシュ 人口密度（2020）",
         meshElderly75Density2025:"500mメッシュ 75歳以上密度（2025推計）",
         meshPopulation2020:"500mメッシュ 総人口（2020）"
@@ -399,51 +387,35 @@
         legend.innerHTML="市区町村を選択すると、人口密度などの変数を地図へ重ねられます。";
         return;
       }
-      if(isMeshVariable(key)){
-        const mesh=await loadMesh(state.pref);
-        if(!mesh){
-          legend.innerHTML="この都道府県の500mメッシュデータはまだ読み込まれていません。";
-          return;
-        }
-        const scoped=meshRowsInScope().filter(r=>meshValue(r,key)>0);
-        if(!scoped.length){
-          legend.innerHTML="商圏または市区町村内に表示できる500mメッシュがありません。";
-          return;
-        }
-        if(state.city==="すべて" && !state.selected && scoped.length>2500){
-          legend.innerHTML="500mメッシュは細かいため、市区町村を選択するか商圏を描画すると表示します。";
-          return;
-        }
-        const values=scoped.map(r=>meshValue(r,key)).sort((a,b)=>a-b);
-        const max=values[Math.max(0,Math.floor(values.length*.94)-1)]||values[values.length-1]||1;
-        const label=marketVariableLabel(key);
-        legend.innerHTML='<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>青=低 / 黄=中 / 赤紫=高<br>表示: '+yen(scoped.length)+'メッシュ<br><small>'+mesh.note+'</small>';
-        scoped.forEach(r=>{
-          const value=meshValue(r,key);
-          const rate=clamp(value/max,0,1);
-          const color=meshColor(rate);
-          L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.16+rate*.48})
-            .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+'<br>'+(r.city||""))
-            .addTo(marketLayer);
-        });
+      if(!isMeshVariable(key)){
+        document.querySelector("#marketVariable").value="";
+        legend.innerHTML="市場変数レイヤーは500mメッシュに統一しました。";
         return;
       }
-      const stats=(state.data.cityStats||[]).filter(c=>c.center&&Number(c[key])>0);
-      if(!stats.length){
-        legend.innerHTML="この都道府県では選択した変数のデータがありません。";
+      const mesh=await loadMesh(state.pref);
+      if(!mesh){
+        legend.innerHTML="この都道府県の500mメッシュデータはまだ読み込まれていません。";
         return;
       }
-      const values=stats.map(c=>Number(c[key]||0)).sort((a,b)=>a-b);
-      const max=values[Math.max(0,Math.floor(values.length*.92)-1)]||values[values.length-1]||1;
+      const scoped=meshRowsInScope().filter(r=>meshValue(r,key)>0);
+      if(!scoped.length){
+        legend.innerHTML="商圏または市区町村内に表示できる500mメッシュがありません。";
+        return;
+      }
+      if(state.city==="すべて" && !state.selected && scoped.length>2500){
+        legend.innerHTML="500mメッシュは細かいため、市区町村を選択するか商圏を描画すると表示します。";
+        return;
+      }
+      const values=scoped.map(r=>meshValue(r,key)).sort((a,b)=>a-b);
+      const max=values[Math.max(0,Math.floor(values.length*.94)-1)]||values[values.length-1]||1;
       const label=marketVariableLabel(key);
-      legend.innerHTML='<b>'+label+'</b><div class="legend-scale"></div>薄い=低い / 濃い=高い（市区町村代表点）';
-      stats.forEach(c=>{
-        const value=Number(c[key]||0);
-        const rate=clamp(value/max,0.08,1);
-        const radius=700+rate*2600;
-        const color=rate>.7?"#0057ff":rate>.4?"#4f8dff":"#9cc4ff";
-        L.circle(c.center,{radius,color,fillColor:color,fillOpacity:.12+rate*.26,opacity:.45,weight:1})
-          .bindPopup('<b>'+c.city+'</b><br>'+label+': '+yen(Math.round(value))+'<br>75歳以上: '+yen(c.elderly75)+'<br>訪問看護: '+yen(c.visitNursing)+'<br>居宅介護支援: '+yen(c.careManagers))
+      legend.innerHTML='<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>青=低 / 黄=中 / 赤紫=高<br>表示: '+yen(scoped.length)+'メッシュ<br><small>'+mesh.note+'</small>';
+      scoped.forEach(r=>{
+        const value=meshValue(r,key);
+        const rate=clamp(value/max,0,1);
+        const color=meshColor(rate);
+        L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.16+rate*.48})
+          .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+'<br>'+(r.city||""))
           .addTo(marketLayer);
       });
     }
