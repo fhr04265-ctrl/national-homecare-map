@@ -108,12 +108,12 @@
               <option value="meshPopulation2020">500mメッシュ 総人口</option>
             </optgroup>
             <optgroup label="供給・連携先を見る">
-              <option value="meshVisitNursingSupply">訪問看護 供給メッシュ</option>
-              <option value="meshCareManagerSupply">居宅介護支援 連携先メッシュ</option>
-              <option value="meshMedicalPartnerSupply">病院・訪問診療 連携先メッシュ</option>
+              <option value="meshVisitNursingSupply">周辺2km 訪問看護供給</option>
+              <option value="meshCareManagerSupply">周辺2km 居宅介護支援</option>
+              <option value="meshMedicalPartnerSupply">周辺2km 医療連携先</option>
             </optgroup>
             <optgroup label="供給余地を見る">
-              <option value="meshElderly75PerVisitNursing">75歳以上人口 / 訪問看護</option>
+              <option value="meshElderly75PerVisitNursing">周辺2km 75歳以上人口 / 訪問看護</option>
             </optgroup>
           </select>
           <div id="marketLegend" class="legend-box">市区町村を選択すると、人口密度などの変数を地図へ重ねられます。</div>
@@ -356,10 +356,10 @@
         meshDensity2020:"500mメッシュ 人口密度（2020）",
         meshElderly75Density2025:"500mメッシュ 75歳以上密度（2025推計）",
         meshPopulation2020:"500mメッシュ 総人口（2020）",
-        meshVisitNursingSupply:"訪問看護 供給メッシュ",
-        meshCareManagerSupply:"居宅介護支援 連携先メッシュ",
-        meshMedicalPartnerSupply:"病院・訪問診療 連携先メッシュ",
-        meshElderly75PerVisitNursing:"75歳以上人口 / 訪問看護"
+        meshVisitNursingSupply:"周辺2km 訪問看護供給",
+        meshCareManagerSupply:"周辺2km 居宅介護支援",
+        meshMedicalPartnerSupply:"周辺2km 医療連携先",
+        meshElderly75PerVisitNursing:"周辺2km 75歳以上人口 / 訪問看護"
       }[key] || "";
     }
     function isMeshVariable(key){
@@ -373,19 +373,19 @@
     }
     function meshValue(row,key){
       const supply=meshSupplyFor(row);
-      if(key==="meshVisitNursingSupply") return supply.vn||0;
-      if(key==="meshCareManagerSupply") return supply.cm||0;
-      if(key==="meshMedicalPartnerSupply") return (supply.hp||0)+(supply.hc||0);
-      if(key==="meshElderly75PerVisitNursing") return row.e75_25 ? Math.round(row.e75_25 / Math.max(1, supply.vn||0)) : 0;
+      if(key==="meshVisitNursingSupply") return supply.vn2||0;
+      if(key==="meshCareManagerSupply") return supply.cm2||0;
+      if(key==="meshMedicalPartnerSupply") return supply.mp2||0;
+      if(key==="meshElderly75PerVisitNursing") return supply.gap2||0;
       if(key==="meshElderly75Density2025") return row.d75_25||0;
       if(key==="meshPopulation2020") return row.p20||0;
       return row.d20||0;
     }
     function meshLegendNote(key,mesh,supply){
-      if(key==="meshVisitNursingSupply") return "濃いほど同一500mメッシュ内の訪問看護事業所が多いエリアです。<br><small>"+(supply?.note||"")+"</small>";
-      if(key==="meshCareManagerSupply") return "濃いほど同一500mメッシュ内の居宅介護支援事業者が多く、連携先候補が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
-      if(key==="meshMedicalPartnerSupply") return "濃いほど病院・訪問診療対応診療所が多く、医療連携の接点が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
-      if(key==="meshElderly75PerVisitNursing") return "濃いほど同一500mメッシュで75歳以上人口に対して訪問看護供給が薄い可能性があるエリアです。<br><small>初期版は同一500mメッシュ内の訪問看護数で割った暫定指標です。</small>";
+      if(key==="meshVisitNursingSupply") return "濃いほど周辺2km内の訪問看護事業所が多いエリアです。<br><small>"+(supply?.note||"")+"</small>";
+      if(key==="meshCareManagerSupply") return "濃いほど周辺2km内の居宅介護支援事業者が多く、連携先候補が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
+      if(key==="meshMedicalPartnerSupply") return "濃いほど周辺2km内の病院・訪問診療対応診療所が多く、医療連携の接点が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
+      if(key==="meshElderly75PerVisitNursing") return "濃いほど周辺2km内で75歳以上人口に対して訪問看護供給が薄い可能性があるエリアです。<br><small>周辺2kmの75歳以上人口を、周辺2kmの訪問看護事業所数で割った指標です。</small>";
       return "<small>"+mesh.note+"</small>";
     }
     function meshColor(rate){
@@ -473,7 +473,7 @@
         const rate=clamp(value/max,0,1);
         const color=meshColor(rate);
         const s=meshSupplyFor(r);
-        const supplyText=requiresMeshSupply(key)?'<br>訪問看護: '+yen(s.vn||0)+' / 居宅介護支援: '+yen(s.cm||0)+'<br>病院: '+yen(s.hp||0)+' / 訪問診療対応診療所: '+yen(s.hc||0):'';
+        const supplyText=requiresMeshSupply(key)?'<br><b>周辺2km</b><br>75歳以上: '+yen(s.e752||0)+' / 訪問看護: '+yen(s.vn2||0)+'<br>居宅介護支援: '+yen(s.cm2||0)+' / 医療連携先: '+yen(s.mp2||0)+'<br><b>同一500m</b><br>訪問看護: '+yen(s.vn||0)+' / 居宅介護支援: '+yen(s.cm||0)+'<br>病院: '+yen(s.hp||0)+' / 訪問診療対応診療所: '+yen(s.hc||0):'';
         L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.16+rate*.48})
           .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+supplyText+'<br>'+(r.city||""))
           .addTo(marketLayer);
