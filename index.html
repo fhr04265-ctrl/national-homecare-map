@@ -468,6 +468,12 @@
             .filter(r=>(r.city||"")===state.city)
             .map(r=>[[r.b[0],r.b[1]],[r.b[2],r.b[3]]])
         : [];
+      if(meshBounds.length){
+        const bounds = L.latLngBounds([]);
+        meshBounds.forEach(pair=>bounds.extend(pair[0]).extend(pair[1]));
+        map.fitBounds(bounds,{padding:[28,28],maxZoom:14});
+        return;
+      }
       if(facilityPoints.length || meshBounds.length){
         const bounds = L.latLngBounds(facilityPoints);
         meshBounds.forEach(pair=>bounds.extend(pair[0]).extend(pair[1]));
