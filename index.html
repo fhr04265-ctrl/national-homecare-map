@@ -67,6 +67,16 @@
     .city-summary{display:grid;gap:6px}
     .city-row{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #edf1f7;padding:7px 0;font-size:12px}
     .city-row b{font-size:13px}
+    .compare-mini{display:grid;gap:8px}
+    .compare-mini-head{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+    .compare-mini-head b{font-size:14px}
+    .compare-mini-list{display:grid;gap:7px}
+    .compare-mini-card{border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px}
+    .compare-mini-title{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:900}
+    .compare-mini-kpis{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px;font-size:10px;color:var(--muted)}
+    .compare-mini-kpis b{display:block;color:var(--ink);font-size:13px}
+    .compare-mini-actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-top:7px}
+    .compare-mini-actions button{min-height:30px;font-size:11px;padding:4px 6px}
     .compare-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
     .compare-card{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px;margin-top:8px}
     .compare-card h3{margin:0 0 6px;font-size:14px;display:flex;align-items:center;gap:7px}
@@ -145,6 +155,24 @@
       <section class="panel">
         <div class="label">施設レイヤー</div>
         <div id="layers" class="checks"></div>
+      </section>
+
+      <section class="panel">
+        <div class="compare-mini">
+          <div class="compare-mini-head">
+            <b>比較エリア</b>
+            <span class="sub">最大3件</span>
+          </div>
+          <div id="compareQuickHint" class="selected">市区町村を選択すると、ここから比較に追加できます。</div>
+          <div class="compare-actions">
+            <button id="quickAddCityCompare" type="button">市区町村を追加</button>
+            <button id="quickAddTradeCompare" type="button">商圏を追加</button>
+            <button id="quickExportCompare" type="button">比較CSV</button>
+            <button id="quickClearCompare" type="button">比較クリア</button>
+          </div>
+          <div id="compareMiniList" class="compare-mini-list"></div>
+          <button id="openCompareDetail" type="button">詳細比較を見る</button>
+        </div>
       </section>
 
       <section class="panel">
@@ -265,7 +293,7 @@
     map.getPane("comparePane").style.zIndex = 360;
     map.createPane("facilityPane");
     map.getPane("facilityPane").style.zIndex = 650;
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
+    const baseLayer=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,opacity:.78,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
     const marketLayer = L.layerGroup().addTo(map);
     const facilityLayer = L.layerGroup().addTo(map);
     const tradeLayer = L.layerGroup().addTo(map);
@@ -380,7 +408,7 @@
       rows.forEach(f=>{
         const radius = f.code==="medical_hospital" ? 8 : f.code==="medical_clinic" ? 7 : f.code==="130" ? 6 : f.code==="430" ? 5 : 3;
         const weight = f.code==="medical_hospital" || f.code==="medical_clinic" ? 2 : 1;
-        const marker = L.circleMarker([f.lat,f.lng],{pane:"facilityPane",radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false)}).addTo(facilityLayer);
+        const marker = L.circleMarker([f.lat,f.lng],{pane:"facilityPane",radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false);renderCompareMiniPanel()}).addTo(facilityLayer);
         markerByUid.set(f.uid, marker);
         if (f.code==="medical_hospital" || f.code==="medical_clinic") marker.bringToFront();
       });
@@ -513,7 +541,7 @@
               const raw=max?meshValue(r,activeMarketKey):0;
               const rate=max?clamp(raw/max,0,1):0;
               const fill=max?meshColor(rate):color;
-              const opacity=max?(.12+rate*.42):.16;
+              const opacity=max?(.10+rate*.32):.12;
               L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{pane:"comparePane",stroke:false,fillColor:fill,fillOpacity:opacity})
                 .bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label+(max?'<br>'+marketVariableLabel(activeMarketKey)+': '+yen(Math.round(raw)):""))
                 .addTo(compareLayer);
@@ -529,6 +557,7 @@
       drawCompareAreas();
       if(!state.compareAreas.length){
         root.innerHTML='<div class="selected">Add a municipality or trade area. Up to 3 areas can be compared.</div>';
+        renderCompareMiniPanel();
         return;
       }
       root.innerHTML=state.compareAreas.map((area,index)=>{
@@ -545,6 +574,38 @@
           '<div class="compare-metric"><b>'+yen(s.potential)+'</b><span>75+ / VN</span></div>'+
           '</div><div class="actions" style="margin-top:8px"><button type="button" onclick="removeCompareArea('+index+')">Remove</button></div></div>';
       }).join("");
+      renderCompareMiniPanel();
+    }
+    function renderCompareMiniPanel(){
+      const root=document.querySelector("#compareMiniList");
+      const hint=document.querySelector("#compareQuickHint");
+      if(!root)return;
+      if(hint){
+        const cityReady=state.data && state.city && state.city!=="縺吶∋縺ｦ";
+        const tradeReady=state.selected && Number(document.querySelector("#tradeRadius")?.value||0)>0;
+        hint.textContent=cityReady ? "選択中の市区町村をすぐ比較に追加できます。" : (tradeReady ? "選択中の施設商圏を比較に追加できます。" : "市区町村または施設商圏を選ぶと、ここから比較に追加できます。");
+      }
+      if(!state.compareAreas.length){
+        root.innerHTML='<div class="selected">比較エリアはまだありません。</div>';
+        return;
+      }
+      root.innerHTML=state.compareAreas.map((area,index)=>{
+        const s=area.summary||summarizeArea(area);
+        area.summary=s;
+        const badge=String.fromCharCode(65+index);
+        const color=compareColors[index%compareColors.length];
+        return '<div class="compare-mini-card"><div class="compare-mini-title"><span class="area-badge" style="background:'+color+'">'+badge+'</span>'+area.label+'</div>'+
+          '<div class="compare-mini-kpis">'+
+          '<div><b>'+yen(s.elderly75)+'</b>75歳以上</div>'+
+          '<div><b>'+yen(s.visitNursing)+'</b>訪問看護</div>'+
+          '<div><b>'+yen(s.careManagers)+'</b>居宅介護支援</div>'+
+          '<div><b>'+yen(s.potential)+'</b>75+ / VN</div>'+
+          '</div><div class="compare-mini-actions">'+
+          '<button type="button" onclick="focusCompareArea('+index+')">表示</button>'+
+          '<button type="button" onclick="removeCompareArea('+index+')">削除</button>'+
+          '<button type="button" onclick="switchTab(&quot;compare&quot;)">詳細</button>'+
+          '</div></div>';
+      }).join("");
     }
     async function addCompareArea(area){
       if(!state.data || !state.pref)return;
@@ -556,7 +617,6 @@
       state.compareAreas.push(area);
       renderFacilities();
       renderCompare();
-      switchTab("compare");
     }
     async function addCityCompare(){
       if(!state.data || state.city==="すべて")return;
@@ -624,7 +684,7 @@
         const color=meshColor(rate);
         const s=meshSupplyFor(r);
         const supplyText=requiresMeshSupply(key)?'<br><b>周辺2km</b><br>75歳以上: '+yen(s.e752||0)+' / 訪問看護: '+yen(s.vn2||0)+'<br>居宅介護支援: '+yen(s.cm2||0)+' / 医療連携先: '+yen(s.mp2||0)+'<br><b>同一500m</b><br>訪問看護: '+yen(s.vn||0)+' / 居宅介護支援: '+yen(s.cm||0)+'<br>病院: '+yen(s.hp||0)+' / 訪問診療対応診療所: '+yen(s.hc||0):'';
-        L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.16+rate*.48})
+        L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.12+rate*.36})
           .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+supplyText+'<br>'+(r.city||""))
           .addTo(marketLayer);
       });
@@ -928,7 +988,18 @@
       renderCitySummary();
       renderCompare();
     });
-    document.querySelector("#city").addEventListener("change",async e=>{state.city=e.target.value;state.meshTradeEstimate=null;renderFacilities();renderCitySummary();await fitCityBounds();renderMarketLayer()});
+    document.querySelector("#city").addEventListener("change",async e=>{
+      state.city=e.target.value;
+      state.meshTradeEstimate=null;
+      if(state.city!=="縺吶∋縺ｦ" && !document.querySelector("#marketVariable").value){
+        document.querySelector("#marketVariable").value="meshDensity2020";
+      }
+      renderFacilities();
+      renderCitySummary();
+      renderCompareMiniPanel();
+      await fitCityBounds();
+      renderMarketLayer();
+    });
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
@@ -972,8 +1043,28 @@
     document.querySelector("#addTradeCompare").addEventListener("click",addTradeCompare);
     document.querySelector("#exportCompare").addEventListener("click",exportCompareCsv);
     document.querySelector("#clearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderFacilities();renderCompare()});
-    window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true)};
+    document.querySelector("#quickAddCityCompare").addEventListener("click",addCityCompare);
+    document.querySelector("#quickAddTradeCompare").addEventListener("click",addTradeCompare);
+    document.querySelector("#quickExportCompare").addEventListener("click",exportCompareCsv);
+    document.querySelector("#quickClearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderFacilities();renderCompare()});
+    document.querySelector("#openCompareDetail").addEventListener("click",()=>{renderCompare();switchTab("compare")});
+    window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true);renderCompareMiniPanel()};
     window.removeCompareArea=index=>{state.compareAreas.splice(index,1);renderFacilities();renderCompare()};
+    window.focusCompareArea=index=>{
+      const area=state.compareAreas[index];
+      if(!area)return;
+      switchTab("map");
+      if(area.type==="trade"){
+        map.fitBounds(L.circle(area.center,{radius:area.radius*1000}).getBounds(),{padding:[28,28],maxZoom:14});
+        return;
+      }
+      const rows=areaMeshRows(area);
+      if(rows.length){
+        const bounds=L.latLngBounds([]);
+        rows.forEach(r=>bounds.extend([r.b[0],r.b[1]]).extend([r.b[2],r.b[3]]));
+        map.fitBounds(bounds,{padding:[28,28],maxZoom:14});
+      }
+    };
     function focusFacility(uid){
       if(!state.data)return;
       const f=state.data.facilities.find(x=>x.uid===uid);
@@ -984,7 +1075,7 @@
       if(marker) marker.openPopup();
       else L.popup().setLatLng([f.lat,f.lng]).setContent(popup(f)).openOn(map);
     }
-    fillPref(); fillLayers(); renderFacilities();
+    fillPref(); fillLayers(); renderFacilities(); renderCompareMiniPanel();
   </script>
 </body>
 </html>
