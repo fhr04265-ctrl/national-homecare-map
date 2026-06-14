@@ -117,6 +117,7 @@
           <select id="pref"></select>
           <select id="city"><option value="すべて">市区町村すべて</option></select>
         </div>
+        <input id="citySearch" type="search" placeholder="市区町村名で検索" style="margin-top:8px">
         <input id="q" type="search" placeholder="事業所名・法人名・住所で検索" style="margin-top:8px">
         <div class="variable-row">
           <select id="marketVariable" aria-label="市場変数レイヤー">
@@ -301,6 +302,18 @@
     const markerByUid = new Map();
     const colors = {"居宅介護支援":"#0057ff","病院":"#111111","訪問診療対応診療所":"#ff8a00","訪問看護":"#e6002e"};
     function yen(n){return Number(n||0).toLocaleString("ja-JP")}
+    function unit(n,label){return yen(n)+" "+label}
+    function densityUnit(n){return yen(Math.round(Number(n||0)))+" 人/km²"}
+    function isAllCity(){const first=document.querySelector("#city option")?.value||"すべて";return !state.city||state.city===first}
+    const density2020Breaks=[
+      {min:0,max:1000,color:"#7bb8ff",label:"0〜1,000 人/km²",note:"低密度・郊外"},
+      {min:1000,max:4000,color:"#fff06a",label:"1,000〜4,000 人/km²",note:"地方中核都市水準"},
+      {min:4000,max:8000,color:"#f5ba5b",label:"4,000〜8,000 人/km²",note:"都市部"},
+      {min:8000,max:15000,color:"#f36f63",label:"8,000〜15,000 人/km²",note:"高密度都市部"},
+      {min:15000,max:25000,color:"#e64b6a",label:"15,000〜25,000 人/km²",note:"東京23区水準"},
+      {min:25000,max:Infinity,color:"#d85b9f",label:"25,000 人/km²以上",note:"超高密度"}
+    ];
+    function density2020Color(value){const item=density2020Breaks.find(b=>value>=b.min&&value<b.max)||density2020Breaks[0];return item.color}
     function colorFor(key){if(colors[key])return colors[key];let h=0;for(let i=0;i<key.length;i++)h=((h<<5)-h+key.charCodeAt(i))|0;return "hsl("+(Math.abs(h)%360)+" 62% 38%)"}
     function distanceKm(aLat,aLng,bLat,bLng){const r=6371,dLat=(bLat-aLat)*Math.PI/180,dLng=(bLng-aLng)*Math.PI/180,s1=Math.sin(dLat/2),s2=Math.sin(dLng/2),a=s1*s1+Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*s2*s2;return 2*r*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
     function switchTab(tab){
@@ -327,13 +340,23 @@
       const other = manifest.groups.filter(g=>!priorityGroups.includes(g));
       document.querySelector("#layers").innerHTML =
         '<div class="layer-primary">'+primary.map(g => '<label class="check"><input type="checkbox" data-group="'+g+'"><span class="dot" style="background:'+colorFor(g)+'"></span>'+g+'</label>').join("")+'</div>'+
-        '<details class="layer-more"><summary>その他のサービスを表示</summary>'+
+        '<details class="layer-more"><summary>その他のサービスを表示</summary><div class="actions" style="margin:0 0 8px"><button id="selectOtherLayers" type="button">その他を全選択</button><button id="clearOtherLayers" type="button">その他を全解除</button></div>'+
         other.map(g => '<label class="check"><input type="checkbox" data-group="'+g+'"><span class="dot" style="background:'+colorFor(g)+'"></span>'+g+'</label>').join("")+
         '</details>';
       document.querySelectorAll("#layers input").forEach(input => input.addEventListener("change", () => {
         state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
         renderFacilities();
       }));
+      document.querySelector("#selectOtherLayers")?.addEventListener("click",()=>{
+        other.forEach(g=>{const input=document.querySelector('#layers input[data-group="'+CSS.escape(g)+'"]'); if(input)input.checked=true});
+        state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
+        renderFacilities();
+      });
+      document.querySelector("#clearOtherLayers")?.addEventListener("click",()=>{
+        other.forEach(g=>{const input=document.querySelector('#layers input[data-group="'+CSS.escape(g)+'"]'); if(input)input.checked=false});
+        state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
+        renderFacilities();
+      });
     }
     function loadPref(code){
       return new Promise((resolve,reject)=>{
@@ -384,7 +407,7 @@
       if(!state.data)return [];
       const q=state.q.trim().toLowerCase();
       return state.data.facilities.filter(f=>{
-        if(state.city!=="すべて" && (f.city||"市区町村未設定")!==state.city && !facilityInCompareAreas(f))return false;
+        if(!isAllCity() && (f.city||"市区町村未設定")!==state.city && !facilityInCompareAreas(f))return false;
         if(!state.groups.has(f.group))return false;
         if(!q)return true;
         return [f.name,f.corp,f.address,f.phone,f.serviceLabel,f.city].some(v=>String(v||"").toLowerCase().includes(q));
@@ -412,10 +435,10 @@
         markerByUid.set(f.uid, marker);
         if (f.code==="medical_hospital" || f.code==="medical_clinic") marker.bringToFront();
       });
-      document.querySelector("#loadedCount").textContent=yen(state.data?state.data.facilities.length:0);
-      document.querySelector("#visibleCount").textContent=yen(rows.length);
-      document.querySelector("#nursingCount").textContent=yen(rows.filter(f=>f.code==="130").length);
-      document.querySelector("#cmCount").textContent=yen(rows.filter(f=>f.code==="430").length);
+      document.querySelector("#loadedCount").textContent=unit(state.data?state.data.facilities.length:0,"施設");
+      document.querySelector("#visibleCount").textContent=unit(rows.length,"施設");
+      document.querySelector("#nursingCount").textContent=unit(rows.filter(f=>f.code==="130").length,"施設");
+      document.querySelector("#cmCount").textContent=unit(rows.filter(f=>f.code==="430").length,"施設");
     }
     function marketVariableLabel(key){
       return {
@@ -461,10 +484,34 @@
       if(rate>=.2)return "#fff06a";
       return "#7bb8ff";
     }
+    function marketColorForValue(key,value,rate){
+      if(key==="meshDensity2020") return density2020Color(value);
+      return meshColor(rate);
+    }
+    function marketRateForValue(key,value,max){
+      if(key==="meshDensity2020") return Math.min(1, Math.max(0, value/25000));
+      return clamp(value/max,0,1);
+    }
+    function densityLegendHtml(){
+      return '<b>500mメッシュ 人口密度（2020）</b><div style="display:grid;gap:3px;margin:6px 0">'+density2020Breaks.map(b=>
+        '<div style="display:grid;grid-template-columns:14px 1fr;gap:6px;align-items:center"><i style="display:block;width:14px;height:10px;background:'+b.color+';border-radius:2px"></i><span>'+b.label+' <small>'+b.note+'</small></span></div>'
+      ).join("")+'</div><small>全国共通の絶対基準です。参考: 全国平均 約340人/km² / 東京都平均 約6,400人/km² / 東京23区平均 約15,000人/km²</small>';
+    }
+    function relativeLegendHtml(label,scoped,key,mesh,supply){
+      return '<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>表示範囲内の相対比較: 青=低 / 黄=中 / 赤紫=高<br>表示: '+unit(scoped.length,"メッシュ")+'<br>'+meshLegendNote(key,mesh,supply);
+    }
+    function meshPopupHtml(r,key,label,value){
+      const s=meshSupplyFor(r);
+      const density=r.d20||0;
+      const elderlyDensity=r.d75_25||0;
+      const valueText=(key==="meshDensity2020"||key==="meshElderly75Density2025")?densityUnit(value):(key==="meshPopulation2020"?unit(Math.round(value),"人"):unit(Math.round(value),"施設"));
+      const supplyText='<br><b>周辺2km</b><br>75歳以上: '+unit(s.e752||0,"人")+' / 訪問看護: '+unit(s.vn2||0,"施設")+'<br>居宅介護支援: '+unit(s.cm2||0,"施設")+' / 医療連携先: '+unit(s.mp2||0,"施設")+'<br><b>同一500m</b><br>訪問看護: '+unit(s.vn||0,"施設")+' / 居宅介護支援: '+unit(s.cm||0,"施設")+'<br>病院: '+unit(s.hp||0,"施設")+' / 訪問診療対応診療所: '+unit(s.hc||0,"施設");
+      return '<b>メッシュ人口・高齢者情報</b><br>メッシュID: '+r.id+'<br>'+label+': '+valueText+'<br>総人口2020: '+unit(r.p20,"人")+'<br>75歳以上2025推計: '+unit(r.e75_25,"人")+'<br>人口密度2020: '+densityUnit(density)+'<br>75歳以上密度2025: '+densityUnit(elderlyDensity)+'<br>面積: '+(Number(r.a||0).toFixed(2))+' km²'+supplyText+'<br>'+(r.city||"");
+    }
     function meshRowsInScope(){
       if(!state.meshData)return [];
       let rows=state.meshData.rows||[];
-      if(state.city && state.city!=="すべて") rows=rows.filter(r=>(r.city||"")===state.city);
+      if(state.city && !isAllCity()) rows=rows.filter(r=>(r.city||"")===state.city);
       if(state.selected && Number(document.querySelector("#tradeRadius").value||0)>0){
         const radius=Number(document.querySelector("#tradeRadius").value||0);
         rows=rows.filter(r=>distanceKm(state.selected.lat,state.selected.lng,r.c[0],r.c[1])<=radius);
@@ -539,8 +586,8 @@
             rows.forEach(r=>{
               bounds.extend([r.b[0],r.b[1]]).extend([r.b[2],r.b[3]]);
               const raw=max?meshValue(r,activeMarketKey):0;
-              const rate=max?clamp(raw/max,0,1):0;
-              const fill=max?meshColor(rate):color;
+              const rate=max?marketRateForValue(activeMarketKey,raw,max):0;
+              const fill=max?marketColorForValue(activeMarketKey,raw,rate):color;
               const opacity=max?(.10+rate*.32):.12;
               L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{pane:"comparePane",stroke:false,fillColor:fill,fillOpacity:opacity})
                 .bindPopup("Area "+String.fromCharCode(65+index)+"<br>"+area.label+(max?'<br>'+marketVariableLabel(activeMarketKey)+': '+yen(Math.round(raw)):""))
@@ -566,12 +613,12 @@
         const badge=String.fromCharCode(65+index);
         const color=compareColors[index%compareColors.length];
         return '<div class="compare-card"><h3><span class="area-badge" style="background:'+color+'">'+badge+'</span>'+area.label+'</h3><small>'+area.description+'</small><div class="compare-metrics">'+
-          '<div class="compare-metric"><b>'+yen(s.population)+'</b><span>Population</span></div>'+
-          '<div class="compare-metric"><b>'+yen(s.elderly75)+'</b><span>Age 75+</span></div>'+
-          '<div class="compare-metric"><b>'+yen(s.visitNursing)+'</b><span>Visit nursing</span></div>'+
-          '<div class="compare-metric"><b>'+yen(s.careManagers)+'</b><span>Care managers</span></div>'+
-          '<div class="compare-metric"><b>'+yen(s.medicalPartners)+'</b><span>Medical partners</span></div>'+
-          '<div class="compare-metric"><b>'+yen(s.potential)+'</b><span>75+ / VN</span></div>'+
+          '<div class="compare-metric"><b>'+unit(s.population,"人")+'</b><span>Population</span></div>'+
+          '<div class="compare-metric"><b>'+unit(s.elderly75,"人")+'</b><span>Age 75+</span></div>'+
+          '<div class="compare-metric"><b>'+unit(s.visitNursing,"施設")+'</b><span>Visit nursing</span></div>'+
+          '<div class="compare-metric"><b>'+unit(s.careManagers,"施設")+'</b><span>Care managers</span></div>'+
+          '<div class="compare-metric"><b>'+unit(s.medicalPartners,"施設")+'</b><span>Medical partners</span></div>'+
+          '<div class="compare-metric"><b>'+unit(s.potential,"人/施設")+'</b><span>75+ / VN</span></div>'+
           '</div><div class="actions" style="margin-top:8px"><button type="button" onclick="removeCompareArea('+index+')">Remove</button></div></div>';
       }).join("");
       renderCompareMiniPanel();
@@ -596,10 +643,10 @@
         const color=compareColors[index%compareColors.length];
         return '<div class="compare-mini-card"><div class="compare-mini-title"><span class="area-badge" style="background:'+color+'">'+badge+'</span>'+area.label+'</div>'+
           '<div class="compare-mini-kpis">'+
-          '<div><b>'+yen(s.elderly75)+'</b>75歳以上</div>'+
-          '<div><b>'+yen(s.visitNursing)+'</b>訪問看護</div>'+
-          '<div><b>'+yen(s.careManagers)+'</b>居宅介護支援</div>'+
-          '<div><b>'+yen(s.potential)+'</b>75+ / VN</div>'+
+          '<div><b>'+unit(s.elderly75,"人")+'</b>75歳以上</div>'+
+          '<div><b>'+unit(s.visitNursing,"施設")+'</b>訪問看護</div>'+
+          '<div><b>'+unit(s.careManagers,"施設")+'</b>居宅介護支援</div>'+
+          '<div><b>'+unit(s.potential,"人/施設")+'</b>75+ / VN</div>'+
           '</div><div class="compare-mini-actions">'+
           '<button type="button" onclick="focusCompareArea('+index+')">表示</button>'+
           '<button type="button" onclick="removeCompareArea('+index+')">削除</button>'+
@@ -664,28 +711,28 @@
           legend.innerHTML="この都道府県の供給メッシュデータはまだ読み込まれていません。";
           return;
         }
+      } else {
+        supply=await loadMeshSupply(state.pref);
       }
       const scoped=meshRowsInScope().filter(r=>meshValue(r,key)>0);
       if(!scoped.length){
         legend.innerHTML="商圏または市区町村内に表示できる500mメッシュがありません。";
         return;
       }
-      if(state.city==="すべて" && !state.selected && scoped.length>2500){
+      if(isAllCity() && !state.selected && scoped.length>2500){
         legend.innerHTML="500mメッシュは細かいため、市区町村を選択するか商圏を描画すると表示します。";
         return;
       }
       const values=scoped.map(r=>meshValue(r,key)).sort((a,b)=>a-b);
       const max=values[Math.max(0,Math.floor(values.length*.94)-1)]||values[values.length-1]||1;
       const label=marketVariableLabel(key);
-      legend.innerHTML='<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>青=低 / 黄=中 / 赤紫=高<br>表示: '+yen(scoped.length)+'メッシュ<br>'+meshLegendNote(key,mesh,supply);
+      legend.innerHTML=(key==="meshDensity2020"?densityLegendHtml()+'<br>表示: '+unit(scoped.length,"メッシュ"):relativeLegendHtml(label,scoped,key,mesh,supply));
       scoped.forEach(r=>{
         const value=meshValue(r,key);
-        const rate=clamp(value/max,0,1);
-        const color=meshColor(rate);
-        const s=meshSupplyFor(r);
-        const supplyText=requiresMeshSupply(key)?'<br><b>周辺2km</b><br>75歳以上: '+yen(s.e752||0)+' / 訪問看護: '+yen(s.vn2||0)+'<br>居宅介護支援: '+yen(s.cm2||0)+' / 医療連携先: '+yen(s.mp2||0)+'<br><b>同一500m</b><br>訪問看護: '+yen(s.vn||0)+' / 居宅介護支援: '+yen(s.cm||0)+'<br>病院: '+yen(s.hp||0)+' / 訪問診療対応診療所: '+yen(s.hc||0):'';
+        const rate=marketRateForValue(key,value,max);
+        const color=marketColorForValue(key,value,rate);
         L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:.12+rate*.36})
-          .bindPopup('<b>'+r.id+'</b><br>'+label+': '+yen(Math.round(value))+'<br>総人口2020: '+yen(r.p20)+'<br>75歳以上2025推計: '+yen(r.e75_25)+supplyText+'<br>'+(r.city||""))
+          .bindPopup(meshPopupHtml(r,key,label,Math.round(value)))
           .addTo(marketLayer);
       });
     }
@@ -696,7 +743,7 @@
     }
     async function fitCityBounds(){
       if(!state.data)return;
-      if(!state.city || state.city==="すべて"){
+      if(!state.city || isAllCity()){
         map.setView(state.data.center, state.pref==="01"?7:9);
         return;
       }
@@ -728,8 +775,13 @@
     }
     function renderCities(){
       const counts=state.data?.cityCounts||{};
-      const cities=Object.keys(counts).sort((a,b)=>counts[b]-counts[a] || a.localeCompare(b,"ja"));
+      const term=(document.querySelector("#citySearch")?.value||"").trim().toLowerCase();
+      const cities=Object.keys(counts)
+        .filter(c=>!term || c.toLowerCase().includes(term))
+        .sort((a,b)=>counts[b]-counts[a] || a.localeCompare(b,"ja"));
       document.querySelector("#city").innerHTML='<option value="すべて">市区町村すべて</option>'+cities.map(c=>'<option value="'+c+'">'+c+'（'+yen(counts[c])+'）</option>').join("");
+      if(state.city && state.city!=="すべて" && !cities.includes(state.city)) state.city="すべて";
+      document.querySelector("#city").value=state.city||"すべて";
     }
     function renderSelected(drawNow){
       const box=document.querySelector("#selectedFacility");
@@ -962,8 +1014,11 @@
     function exportTradeCsv(){
       if(!state.selected)return;
       if(!state.tradeRows.length)state.tradeRows=tradeFacilities();
+      if(!state.groups.size){alert("CSV出力する施設レイヤーを選択してください。");return}
+      const exportRows=state.tradeRows.filter(f=>state.groups.has(f.group));
+      if(!exportRows.length){alert("選択中の施設レイヤーに該当する商圏内施設がありません。");return}
       const header=["距離km","大分類","サービス","施設名","都道府県","市区町村","住所","電話","法人","ID/事業所番号","URL"];
-      const csv=[header,...state.tradeRows.map(f=>[f.distanceKm.toFixed(3),f.group,f.serviceLabel,f.name,f.pref,f.city,f.address,f.phone,f.corp,f.no,f.url])].map(r=>r.map(csvCell).join(",")).join("\n");
+      const csv=[header,...exportRows.map(f=>[f.distanceKm.toFixed(3),f.group,f.serviceLabel,f.name,f.pref,f.city,f.address,f.phone,f.corp,f.no,f.url])].map(r=>r.map(csvCell).join(",")).join("\n");
       const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
       const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="trade_area_facilities_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
@@ -976,7 +1031,7 @@
       const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sales_targets_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
-      state.pref=e.target.value; state.city="すべて"; state.selected=null; state.compareAreas=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
+      state.pref=e.target.value; state.city="すべて"; state.selected=null; document.querySelector("#citySearch").value=""; state.compareAreas=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
       state.meshData=null; state.meshLoading=null; state.meshSupplyData=null; state.meshSupplyLoading=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
       if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();return}
       state.data=await loadPref(state.pref);
@@ -991,7 +1046,7 @@
     document.querySelector("#city").addEventListener("change",async e=>{
       state.city=e.target.value;
       state.meshTradeEstimate=null;
-      if(state.city!=="縺吶∋縺ｦ" && !document.querySelector("#marketVariable").value){
+      if(!isAllCity() && !document.querySelector("#marketVariable").value){
         document.querySelector("#marketVariable").value="meshDensity2020";
       }
       renderFacilities();
@@ -1000,6 +1055,7 @@
       await fitCityBounds();
       renderMarketLayer();
     });
+    document.querySelector("#citySearch").addEventListener("input",()=>{renderCities();renderFacilities();renderCitySummary();renderMarketLayer();renderCompareMiniPanel()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
