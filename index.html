@@ -38,6 +38,10 @@
     .variable-row{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
     .legend-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:11px;color:var(--muted);line-height:1.45}
     .legend-scale{height:8px;border-radius:99px;background:linear-gradient(90deg,#e8f1ff,#88b8ff,#0057ff);margin:6px 0}
+    .station-label{pointer-events:none}
+    .station-label span{display:inline-block;white-space:nowrap;border:1px solid rgba(15,118,110,.35);border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 1px 5px rgba(16,24,40,.16);padding:2px 7px;color:#0f3d3a;font-size:11px;font-weight:900;line-height:1.35}
+    .station-controls{display:grid;gap:7px}
+    .station-radius{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center}
     .tabs{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;padding:12px 18px;border-bottom:1px solid var(--line);background:#fff}
     .tabs button{font-size:12px;padding:7px 6px}
     .tabs button[aria-selected="true"]{background:var(--blue);border-color:var(--blue);color:#fff}
@@ -159,6 +163,24 @@
       </section>
 
       <section class="panel">
+        <div class="label">駅レイヤー</div>
+        <div class="station-controls">
+          <label class="check"><input type="checkbox" id="showStations"><span class="dot" style="background:#0f766e"></span>駅を表示</label>
+          <label class="check"><input type="checkbox" id="showStationNames"><span class="dot" style="background:#134e4a"></span>駅名を表示</label>
+          <label class="check"><input type="checkbox" id="showStationCatchment"><span class="dot" style="background:#5eead4"></span>駅勢圏を表示</label>
+          <div class="station-radius">
+            <span class="sub">駅勢圏半径</span>
+            <select id="stationCatchmentRadius" aria-label="駅勢圏半径">
+              <option value="0.5">500m</option>
+              <option value="1" selected>1km</option>
+              <option value="2">2km</option>
+            </select>
+          </div>
+          <div id="stationStatus" class="legend-box">駅勢圏は直線距離の目安です。実際の人流・移動時間ではありません。</div>
+        </div>
+      </section>
+
+      <section class="panel">
         <div class="compare-mini">
           <div class="compare-mini-head">
             <b>比較エリア</b>
@@ -269,7 +291,7 @@
       </div>
 
       <section class="panel sub">
-        出所：厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット。全国版では都道府県別データを読み込みます。商圏CSVは読み込み済み都道府県内で抽出します。
+        出所：厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット、国土交通省 国土数値情報 鉄道データ N02。全国版では都道府県別データを読み込みます。商圏CSVは読み込み済み都道府県内で抽出します。
       </section>
     </aside>
     <div id="map"></div>
@@ -284,14 +306,20 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js"></script>
+  <script src="national_homecare_data/manifest.js?v=20260619-phase1-stations"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null, compareAreas:[] };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null, compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     map.createPane("comparePane");
     map.getPane("comparePane").style.zIndex = 360;
+    map.createPane("stationCatchmentPane");
+    map.getPane("stationCatchmentPane").style.zIndex = 370;
+    map.createPane("stationPane");
+    map.getPane("stationPane").style.zIndex = 630;
+    map.createPane("stationNamePane");
+    map.getPane("stationNamePane").style.zIndex = 640;
     map.createPane("facilityPane");
     map.getPane("facilityPane").style.zIndex = 650;
     const baseLayer=L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,opacity:.78,attribution:"&copy; OpenStreetMap contributors"}).addTo(map);
@@ -299,9 +327,13 @@
     const facilityLayer = L.layerGroup().addTo(map);
     const tradeLayer = L.layerGroup().addTo(map);
     const compareLayer = L.layerGroup().addTo(map);
+    const stationCatchmentLayer = L.layerGroup().addTo(map);
+    const stationLayer = L.layerGroup().addTo(map);
+    const stationNameLayer = L.layerGroup().addTo(map);
     const markerByUid = new Map();
     const colors = {"居宅介護支援":"#0057ff","病院":"#111111","訪問診療対応診療所":"#ff8a00","訪問看護":"#e6002e"};
     function yen(n){return Number(n||0).toLocaleString("ja-JP")}
+    function escapeHtml(value){return String(value||"").replace(/[&<>"']/g, ch=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[ch]))}
     function unit(n,label){return yen(n)+" "+label}
     function densityUnit(n){return yen(Math.round(Number(n||0)))+" 人/km²"}
     function isAllCity(){const first=document.querySelector("#city option")?.value||"すべて";return !state.city||state.city===first}
@@ -403,6 +435,21 @@
       });
       return state.meshSupplyLoading;
     }
+    function loadStations(){
+      if(window.NATIONAL_HOMECARE_STATIONS?.ALL){
+        state.stationData=window.NATIONAL_HOMECARE_STATIONS.ALL;
+        return Promise.resolve(state.stationData);
+      }
+      if(state.stationLoading) return state.stationLoading;
+      state.stationLoading = new Promise((resolve)=>{
+        const script=document.createElement("script");
+        script.src="national_homecare_data/stations_all.js?v="+encodeURIComponent(manifest.generatedAt);
+        script.onload=()=>{state.stationData=window.NATIONAL_HOMECARE_STATIONS?.ALL||null;resolve(state.stationData)};
+        script.onerror=()=>{state.stationData=null;resolve(null)};
+        document.body.appendChild(script);
+      });
+      return state.stationLoading;
+    }
     function filtered(){
       if(!state.data)return [];
       const q=state.q.trim().toLowerCase();
@@ -439,6 +486,74 @@
       document.querySelector("#visibleCount").textContent=unit(rows.length,"施設");
       document.querySelector("#nursingCount").textContent=unit(rows.filter(f=>f.code==="130").length,"施設");
       document.querySelector("#cmCount").textContent=unit(rows.filter(f=>f.code==="430").length,"施設");
+    }
+    let stationRenderSeq = 0;
+    let stationRenderTimer = null;
+    function stationOptions(){
+      return {
+        points: !!document.querySelector("#showStations")?.checked,
+        names: !!document.querySelector("#showStationNames")?.checked,
+        catchment: !!document.querySelector("#showStationCatchment")?.checked,
+        radiusKm: Number(document.querySelector("#stationCatchmentRadius")?.value || 1)
+      };
+    }
+    function clearStations(message){
+      stationCatchmentLayer.clearLayers();
+      stationLayer.clearLayers();
+      stationNameLayer.clearLayers();
+      const status=document.querySelector("#stationStatus");
+      if(status) status.textContent=message || "駅勢圏は直線距離の目安です。実際の人流・移動時間ではありません。";
+    }
+    function scheduleRenderStations(){
+      clearTimeout(stationRenderTimer);
+      stationRenderTimer=setTimeout(()=>renderStations(),120);
+    }
+    async function renderStations(){
+      const options=stationOptions();
+      if(!options.points && !options.names && !options.catchment){
+        clearStations();
+        return;
+      }
+      const seq=++stationRenderSeq;
+      const status=document.querySelector("#stationStatus");
+      if(status) status.textContent="駅データを読み込み中です。";
+      const data=await loadStations();
+      if(seq!==stationRenderSeq) return;
+      if(!data?.rows?.length){
+        clearStations("駅データを読み込めませんでした。");
+        return;
+      }
+      stationCatchmentLayer.clearLayers();
+      stationLayer.clearLayers();
+      stationNameLayer.clearLayers();
+      const bounds=map.getBounds().pad(.12);
+      const zoom=map.getZoom();
+      const visible=data.rows.filter(st=>bounds.contains([st.lat,st.lng])).sort((a,b)=>(b.lineCount||0)-(a.lineCount||0) || a.name.localeCompare(b.name,"ja"));
+      const pointLimit=zoom>=12?1200:zoom>=10?700:350;
+      const catchmentLimit=zoom>=13?400:zoom>=11?180:0;
+      const labelLimit=zoom>=15?260:zoom>=13?150:zoom>=11?70:0;
+      const points=visible.slice(0,pointLimit);
+      if(options.catchment && catchmentLimit>0){
+        points.slice(0,catchmentLimit).forEach(st=>{
+          L.circle([st.lat,st.lng],{pane:"stationCatchmentPane",radius:options.radiusKm*1000,color:"#0f766e",fillColor:"#5eead4",fillOpacity:.045,opacity:.35,weight:1,dashArray:"5 6",interactive:false}).addTo(stationCatchmentLayer);
+        });
+      }
+      if(options.points){
+        points.forEach(st=>{
+          const lineText=(st.lines||[]).slice(0,4).map(escapeHtml).join(" / ");
+          const operatorText=(st.operators||[]).slice(0,3).map(escapeHtml).join(" / ");
+          const popup='<div class="popup"><span class="tag">駅</span><h3>'+escapeHtml(st.name)+'</h3><p><b>路線:</b> '+(lineText||"-")+'</p><p><b>事業者:</b> '+(operatorText||"-")+'</p><p><b>駅勢圏:</b> 直線距離の目安。実際の人流・所要時間ではありません。</p></div>';
+          L.circleMarker([st.lat,st.lng],{pane:"stationPane",radius:st.lineCount>1?5:4,color:"#ffffff",fillColor:"#0f766e",fillOpacity:.95,opacity:1,weight:1.5}).bindPopup(popup).addTo(stationLayer);
+        });
+      }
+      if(options.names && labelLimit>0){
+        points.slice(0,labelLimit).forEach(st=>{
+          L.marker([st.lat,st.lng],{pane:"stationNamePane",interactive:false,icon:L.divIcon({className:"station-label",html:"<span>"+escapeHtml(st.name)+"</span>",iconSize:null,iconAnchor:[-8,22]})}).addTo(stationNameLayer);
+        });
+      }
+      const hiddenNote = options.names && labelLimit===0 ? " 駅名は拡大すると表示されます。" : "";
+      const catchmentNote = options.catchment && catchmentLimit===0 ? " 駅勢圏は拡大すると表示されます。" : "";
+      if(status) status.textContent="表示範囲内: "+unit(visible.length,"駅")+" / 描画: "+unit(points.length,"駅")+"。駅勢圏は直線距離の目安で、実際の人流・移動時間ではありません。"+hiddenNote+catchmentNote;
     }
     function marketVariableLabel(key){
       return {
@@ -1037,7 +1152,7 @@
     document.querySelector("#pref").addEventListener("change",async e=>{
       state.pref=e.target.value; state.city="すべて"; state.selected=null; document.querySelector("#citySearch").value=""; state.compareAreas=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
       state.meshData=null; state.meshLoading=null; state.meshSupplyData=null; state.meshSupplyLoading=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
-      if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();return}
+      if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();scheduleRenderStations();return}
       state.data=await loadPref(state.pref);
       renderCities();
       map.setView(state.data.center, state.pref==="01"?7:9);
@@ -1046,6 +1161,7 @@
       renderMarketLayer();
       renderCitySummary();
       renderCompare();
+      scheduleRenderStations();
     });
     document.querySelector("#city").addEventListener("change",async e=>{
       state.city=e.target.value;
@@ -1058,10 +1174,16 @@
       renderCompareMiniPanel();
       await fitCityBounds();
       renderMarketLayer();
+      scheduleRenderStations();
     });
-    document.querySelector("#citySearch").addEventListener("input",()=>{renderCities();renderFacilities();renderCitySummary();renderMarketLayer();renderCompareMiniPanel()});
+    document.querySelector("#citySearch").addEventListener("input",()=>{renderCities();renderFacilities();renderCitySummary();renderMarketLayer();renderCompareMiniPanel();scheduleRenderStations()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
+    document.querySelector("#showStations").addEventListener("change",renderStations);
+    document.querySelector("#showStationNames").addEventListener("change",renderStations);
+    document.querySelector("#showStationCatchment").addEventListener("change",renderStations);
+    document.querySelector("#stationCatchmentRadius").addEventListener("change",renderStations);
+    map.on("moveend zoomend",scheduleRenderStations);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
     document.querySelectorAll("#radiusChips button").forEach(button=>button.addEventListener("click",()=>{
