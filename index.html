@@ -1127,7 +1127,7 @@
         await loadMesh(state.pref);
         state.meshTradeEstimate=aggregateMeshPopulation();
       }
-      L.circle([state.selected.lat,state.selected.lng],{radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.75,weight:2}).addTo(tradeLayer);
+      L.circle([state.selected.lat,state.selected.lng],{radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.75,weight:2,interactive:false}).addTo(tradeLayer);
       document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+state.data.prefName+'</b>抽出対象</div>';
       renderAnalysis();
       if(isMeshVariable(document.querySelector("#marketVariable").value)) renderMarketLayer();
