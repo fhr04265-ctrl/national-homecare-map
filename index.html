@@ -213,6 +213,7 @@
         </div>
         <div class="actions">
           <button id="exportTrade" type="button">円内CSV出力</button>
+          <button id="exportTradeReport" type="button">分析PDF</button>
           <button id="clearTrade" type="button">商圏クリア</button>
         </div>
         <div id="tradeResult" class="trade-result" style="margin-top:8px">
@@ -225,6 +226,9 @@
         <section class="panel">
           <div id="tradeInsight"></div>
           <div class="label">商圏サマリー</div>
+          <div class="actions" style="margin-bottom:8px">
+            <button id="exportAnalysisReport" type="button">分析PDF</button>
+          </div>
           <div id="analysisContext" class="selected">地図タブで施設を選択し、商圏を描画してください。</div>
           <div id="analysisSummary" class="analysis-grid" style="margin-top:8px"></div>
         </section>
@@ -1103,6 +1107,76 @@
         '<div class="analysis-card"><b>'+yen((tradeCounts()["訪問診療対応診療所"]||0))+'</b>訪問診療対応診療所</div>';
       list.innerHTML=competitors.map(f=>'<div class="analysis-row"><span>'+f.name+'<br><small>'+((f.city||"-"))+' / '+f.distanceKm.toFixed(2)+'km</small></span><b>'+f.distanceKm.toFixed(1)+'km</b></div>').join("");
     }
+    function reportMetric(label,value,unitLabel){
+      return '<div class="report-metric"><b>'+escapeHtml(value)+'</b><span>'+escapeHtml(label+(unitLabel?" / "+unitLabel:""))+'</span></div>';
+    }
+    function exportTradeReportPdf(){
+      if(!state.selected || !state.tradeRows.length){
+        alert("商圏を描画してからPDF出力してください。");
+        return;
+      }
+      renderAnalysis();
+      const radius=Number(document.querySelector("#tradeRadius").value||0);
+      const rows=state.tradeRows||[];
+      const est=estimateTradePopulation(rows);
+      const counts=tradeCounts();
+      const score=tradeScore(est,counts);
+      const narrative=tradeNarrative(score,est);
+      const targets=targetRows().slice(0,15);
+      const serviceRows=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ja"));
+      const nursing=counts["訪問看護"]||0;
+      const care=counts["居宅介護支援"]||0;
+      const hospitals=counts["病院"]||0;
+      const clinics=counts["訪問診療対応診療所"]||0;
+      const createdAt=new Date().toLocaleString("ja-JP");
+      const scoreRows=[
+        ["需要",score.demand],
+        ["供給不足",score.shortage],
+        ["紹介元",score.referral],
+        ["競合余地",score.competition],
+        ["アクセス暫定",score.access]
+      ];
+      const sourceNote='人口・高齢者人口は500mメッシュまたは市区町村按分による推計です。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
+      const html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>商圏分析レポート</title>'+
+        '<style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#17202a;font-family:"Yu Gothic","Meiryo",system-ui,sans-serif;font-size:12px;line-height:1.55}h1{font-size:22px;margin:0 0 6px}h2{font-size:14px;margin:18px 0 8px;border-bottom:1px solid #d9e0ea;padding-bottom:4px}.sub{color:#667085}.head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;border-bottom:3px solid #0b57d0;padding-bottom:10px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900;padding:4px 10px}.decision{border:1px solid #d9e0ea;border-left:5px solid #0b57d0;border-radius:8px;padding:10px;margin:12px 0}.decision strong{font-size:16px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.report-metric{border:1px solid #d9e0ea;border-radius:8px;padding:8px;background:#f8fafc;min-height:54px}.report-metric b{display:block;font-size:17px;line-height:1.1}.report-metric span{display:block;color:#667085;font-size:10px;margin-top:4px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score-line{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center}.meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:#0b57d0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #edf1f7;padding:6px 4px;text-align:left;vertical-align:top}th{font-size:10px;color:#344054;background:#f8fafc}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.note{font-size:10px;color:#667085;margin-top:14px}.pagebreak{break-before:page}@media print{button{display:none}}</style></head><body>'+
+        '<div class="head"><div><h1>商圏分析レポート</h1><div class="sub">'+escapeHtml(state.data?.prefName||"")+' / '+escapeHtml(state.selected.city||"-")+' / 半径 '+escapeHtml(radius)+'km</div></div><div class="sub">作成: '+escapeHtml(createdAt)+'</div></div>'+
+        '<h2>対象拠点</h2><table><tbody>'+
+        '<tr><th>事業所名</th><td>'+escapeHtml(state.selected.name)+'</td><th>サービス</th><td>'+escapeHtml(state.selected.serviceLabel)+'</td></tr>'+
+        '<tr><th>住所</th><td colspan="3">'+escapeHtml(state.selected.address||"-")+'</td></tr>'+
+        '</tbody></table>'+
+        '<div class="decision"><strong><span class="badge">'+score.grade+'</span> 営業・企画判断: '+escapeHtml(narrative.headline)+'</strong><br>'+escapeHtml(narrative.action)+
+        (narrative.strengths.length?'<br><b>強み:</b> '+escapeHtml(narrative.strengths.join(" / ")):'')+
+        (narrative.cautions.length?'<br><b>注意:</b> '+escapeHtml(narrative.cautions.join(" / ")):'')+'</div>'+
+        '<h2>商圏サマリー</h2><div class="metrics">'+
+        reportMetric("商圏総合スコア",score.overall,"点")+
+        reportMetric("商圏内施設数",yen(rows.length),"施設")+
+        reportMetric("推計75歳以上人口",yen(est.elderly75),"人")+
+        reportMetric("推計65歳以上人口",yen(est.elderly),"人")+
+        reportMetric("推計総人口",yen(est.population),"人")+
+        reportMetric("訪問看護",yen(nursing),"施設")+
+        reportMetric("75歳以上/訪問看護",nursing?yen(Math.round(est.elderly75/nursing)):"-","人/施設")+
+        reportMetric("集計単位",yen(est.matched),est.source==="500mメッシュ"?"メッシュ":"市区町村")+
+        '</div>'+
+        '<h2>スコア内訳</h2><div class="scores">'+scoreRows.map(([label,value])=>'<div class="score-line"><span>'+escapeHtml(label)+'</span><div class="meter"><i style="width:'+value+'%"></i></div><b>'+value+'</b></div>').join("")+'</div>'+
+        '<h2>主要カテゴリ</h2><div class="metrics">'+
+        reportMetric("居宅介護支援",yen(care),"施設")+
+        reportMetric("病院",yen(hospitals),"施設")+
+        reportMetric("訪問診療対応診療所",yen(clinics),"施設")+
+        reportMetric("訪問看護",yen(nursing),"施設")+
+        '</div>'+
+        '<div class="two"><div><h2>サービス別件数</h2><table><thead><tr><th>サービス</th><th>件数</th></tr></thead><tbody>'+serviceRows.map(([name,count])=>'<tr><td>'+escapeHtml(name)+'</td><td>'+yen(count)+'</td></tr>').join("")+'</tbody></table></div>'+
+        '<div><h2>営業候補 上位15件</h2><table><thead><tr><th>優先</th><th>施設</th><th>種別</th><th>距離</th></tr></thead><tbody>'+targets.map(f=>'<tr><td>'+f.salesScore+'</td><td>'+escapeHtml(f.name)+'<br><span class="sub">'+escapeHtml(f.phone||"-")+'</span></td><td>'+escapeHtml(f.group)+'</td><td>'+f.distanceKm.toFixed(2)+'km</td></tr>').join("")+'</tbody></table></div></div>'+
+        '<div class="note">'+escapeHtml(sourceNote)+'<br>出所: 厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット、国土交通省 国土数値情報、既存500mメッシュ推計データ。</div>'+
+        '<script>window.onload=function(){setTimeout(function(){window.print()},250)}<\/script></body></html>';
+      const report=window.open("","_blank");
+      if(!report){
+        alert("ポップアップがブロックされました。ブラウザのポップアップ許可後に再度お試しください。");
+        return;
+      }
+      report.document.open();
+      report.document.write(html);
+      report.document.close();
+    }
     function renderCitySummary(){
       const root=document.querySelector("#citySummary");
       if(!state.data){root.innerHTML='<div class="selected">都道府県を選択してください。</div>';return}
@@ -1195,6 +1269,8 @@
       drawTradeArea();
     }));
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
+    document.querySelector("#exportTradeReport").addEventListener("click",exportTradeReportPdf);
+    document.querySelector("#exportAnalysisReport").addEventListener("click",exportTradeReportPdf);
     document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis();renderMarketLayer()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
