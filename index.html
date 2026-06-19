@@ -130,8 +130,6 @@
               <option value="meshDensity2020">500mメッシュ 人口密度</option>
               <option value="meshElderly75Density2025">500mメッシュ 75歳以上密度（2025推計）</option>
               <option value="meshPopulation2020">500mメッシュ 夜間人口（2020）</option>
-              <option value="meshDaytimeActivity2020">500mメッシュ 昼間活動人口（暫定）</option>
-              <option value="meshDayNightGap2020">500mメッシュ 昼夜差ポテンシャル（暫定）</option>
             </optgroup>
             <optgroup label="供給・連携先を見る">
               <option value="meshVisitNursingSupply">周辺2km 訪問看護供給</option>
@@ -308,7 +306,7 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260619-phase2-daytime-alpha"></script>
+  <script src="national_homecare_data/manifest.js?v=20260619-remove-daytime-alpha"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
     const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null, compareAreas:[], stationData:null, stationLoading:null };
@@ -562,8 +560,6 @@
         meshDensity2020:"500mメッシュ 人口密度（2020）",
         meshElderly75Density2025:"500mメッシュ 75歳以上密度（2025推計）",
         meshPopulation2020:"500mメッシュ 夜間人口（2020）",
-        meshDaytimeActivity2020:"500mメッシュ 昼間活動人口（暫定）",
-        meshDayNightGap2020:"500mメッシュ 昼夜差ポテンシャル（暫定）",
         meshVisitNursingSupply:"周辺2km 訪問看護供給",
         meshCareManagerSupply:"周辺2km 居宅介護支援",
         meshMedicalPartnerSupply:"周辺2km 医療連携先",
@@ -571,7 +567,7 @@
       }[key] || "";
     }
     function isMeshVariable(key){
-      return key==="meshDensity2020" || key==="meshElderly75Density2025" || key==="meshPopulation2020" || key==="meshDaytimeActivity2020" || key==="meshDayNightGap2020" || key==="meshVisitNursingSupply" || key==="meshCareManagerSupply" || key==="meshMedicalPartnerSupply" || key==="meshElderly75PerVisitNursing";
+      return key==="meshDensity2020" || key==="meshElderly75Density2025" || key==="meshPopulation2020" || key==="meshVisitNursingSupply" || key==="meshCareManagerSupply" || key==="meshMedicalPartnerSupply" || key==="meshElderly75PerVisitNursing";
     }
     function requiresMeshSupply(key){
       return key==="meshVisitNursingSupply" || key==="meshCareManagerSupply" || key==="meshMedicalPartnerSupply" || key==="meshElderly75PerVisitNursing";
@@ -587,8 +583,6 @@
       if(key==="meshElderly75PerVisitNursing") return supply.gap2||0;
       if(key==="meshElderly75Density2025") return row.d75_25||0;
       if(key==="meshPopulation2020") return row.p20||0;
-      if(key==="meshDaytimeActivity2020") return row.day20||0;
-      if(key==="meshDayNightGap2020") return Math.max(0,row.gap20||0);
       return row.d20||0;
     }
     function meshLegendNote(key,mesh,supply){
@@ -596,7 +590,6 @@
       if(key==="meshCareManagerSupply") return "濃いほど周辺2km内の居宅介護支援事業者が多く、連携先候補が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
       if(key==="meshMedicalPartnerSupply") return "濃いほど周辺2km内の病院・訪問診療対応診療所が多く、医療連携の接点が集まりやすいエリアです。<br><small>"+(supply?.note||"")+"</small>";
       if(key==="meshElderly75PerVisitNursing") return "濃いほど周辺2km内で75歳以上人口に対して訪問看護供給が薄い可能性があるエリアです。<br><small>周辺2kmの75歳以上人口を、周辺2kmの訪問看護事業所数で割った指標です。</small>";
-      if(key==="meshDaytimeActivity2020" || key==="meshDayNightGap2020") return "SSDSE-A-2025の市区町村別 従業者数（民営）・就業者数から按分した暫定推計です。実際の人流・移動時間・リアルタイム滞在者数ではありません。<br><small>"+(mesh.daytimeProxy?.source||mesh.note)+"</small>";
       return "<small>"+mesh.note+"</small>";
     }
     function meshColor(rate){
@@ -627,7 +620,7 @@
       return '<b>'+label+'</b><div style="height:10px;border-radius:99px;background:linear-gradient(90deg,#7bb8ff,#fff06a,#f5ba5b,#f36f63,#d85b9f);margin:6px 0"></div>表示範囲内の相対比較: 青=低 / 黄=中 / 赤紫=高<br>表示: '+unit(scoped.length,"メッシュ")+'<br>'+meshLegendNote(key,mesh,supply);
     }
     function isPopulationValueKey(key){
-      return key==="meshPopulation2020" || key==="meshDaytimeActivity2020" || key==="meshDayNightGap2020";
+      return key==="meshPopulation2020";
     }
     function meshPopupHtml(r,key,label,value){
       const s=meshSupplyFor(r);
@@ -635,8 +628,7 @@
       const elderlyDensity=r.d75_25||0;
       const valueText=(key==="meshDensity2020"||key==="meshElderly75Density2025")?densityUnit(value):(isPopulationValueKey(key)?unit(Math.round(value),"人"):unit(Math.round(value),"施設"));
       const supplyText='<br><b>周辺2km</b><br>75歳以上: '+unit(s.e752||0,"人")+' / 訪問看護: '+unit(s.vn2||0,"施設")+'<br>居宅介護支援: '+unit(s.cm2||0,"施設")+' / 医療連携先: '+unit(s.mp2||0,"施設")+'<br><b>同一500m</b><br>訪問看護: '+unit(s.vn||0,"施設")+' / 居宅介護支援: '+unit(s.cm||0,"施設")+'<br>病院: '+unit(s.hp||0,"施設")+' / 訪問診療対応診療所: '+unit(s.hc||0,"施設");
-      const daytimeText=(r.day20||r.gap20||r.dayRatio20)?'<br>昼間活動人口 暫定: '+unit(r.day20||0,"人")+'<br>昼夜差 暫定: '+unit(r.gap20||0,"人")+'<br>昼間活動比 暫定: '+yen(r.dayRatio20||0)+'%':'';
-      return '<b>メッシュ人口・高齢者情報</b><br>メッシュID: '+r.id+'<br>'+label+': '+valueText+'<br>夜間人口2020: '+unit(r.p20,"人")+daytimeText+'<br>75歳以上2025推計: '+unit(r.e75_25,"人")+'<br>人口密度2020: '+densityUnit(density)+'<br>75歳以上密度2025: '+densityUnit(elderlyDensity)+'<br>面積: '+(Number(r.a||0).toFixed(2))+' km²'+supplyText+'<br>'+(r.city||"");
+      return '<b>メッシュ人口・高齢者情報</b><br>メッシュID: '+r.id+'<br>'+label+': '+valueText+'<br>夜間人口2020: '+unit(r.p20,"人")+'<br>75歳以上2025推計: '+unit(r.e75_25,"人")+'<br>人口密度2020: '+densityUnit(density)+'<br>75歳以上密度2025: '+densityUnit(elderlyDensity)+'<br>面積: '+(Number(r.a||0).toFixed(2))+' km²'+supplyText+'<br>'+(r.city||"");
     }
     function meshRowsInScope(){
       if(!state.meshData)return [];
