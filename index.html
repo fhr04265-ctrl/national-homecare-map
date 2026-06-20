@@ -40,6 +40,14 @@
     .legend-scale{height:8px;border-radius:99px;background:linear-gradient(90deg,#e8f1ff,#88b8ff,#0057ff);margin:6px 0}
     .quick-guide{display:grid;gap:6px;border:1px solid #c7d7fe;border-radius:8px;background:#f5f8ff;padding:10px;margin-top:10px;font-size:12px;color:#344054}
     .quick-guide b{color:#0b57d0}
+    .mode-panel{display:grid;gap:8px}
+    .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .mode-button{display:grid;gap:2px;text-align:left;min-height:58px;padding:9px 10px;border-color:#d4dce8;background:#fff}
+    .mode-button span{font-size:11px;color:var(--muted);font-weight:700;line-height:1.35}
+    .mode-button.active{background:#eef4ff;border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 1px rgba(11,87,208,.18) inset}
+    .mode-button.active span{color:#345f9f}
+    .mode-status{border:1px solid #d9e0ea;border-radius:8px;background:#fff;padding:8px;font-size:11px;color:#667085;line-height:1.45}
+    .mobile-mode-bar,.mobile-action-bar,.mobile-sheet{display:none}
     .preset-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
     .trade-scope{margin-top:8px;border:1px solid #d9e0ea;border-radius:8px;background:#fff;padding:8px;font-size:11px;color:#667085;line-height:1.45}
     .station-label{pointer-events:none}
@@ -98,7 +106,7 @@
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){body{padding-bottom:58px}.app{grid-template-columns:1fr;height:auto}.tabs{display:none}#map{order:-1;height:56vh;min-height:360px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
+    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -120,6 +128,12 @@
       </nav>
 
       <div id="mapTab" class="tab-panel active">
+      <section class="panel mode-panel">
+        <div class="label">分析モード</div>
+        <div id="modeButtons" class="mode-grid"></div>
+        <div id="modeStatus" class="mode-status">目的に合わせて表示レイヤーと市場変数を切り替えます。</div>
+      </section>
+
       <section class="panel">
         <div class="label">対象地域</div>
         <div class="grid2">
@@ -305,10 +319,23 @@
       </div>
 
       <section class="panel sub">
-        出所：厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット、国土交通省 国土数値情報 鉄道データ N02。全国版では都道府県別データを読み込みます。商圏CSVは読み込み済み都道府県内で抽出します。
+        出所：厚生労働省 介護サービス情報公表システム、厚生労働省 医療情報ネット、国土交通省 国土数値情報 鉄道データ N02。全国版では都道府県別データを読み込みます。県境をまたぐ商圏は必要な都道府県データを追加読み込みして抽出します。
       </section>
     </aside>
     <div id="map"></div>
+  </div>
+  <div id="mobileModeBar" class="mobile-mode-bar" aria-label="分析モード"></div>
+  <div class="mobile-action-bar" aria-label="スマホ主要操作">
+    <button id="mobileOpenArea" type="button">地域</button>
+    <button id="mobileOpenSelected" type="button">施設・商圏</button>
+    <button id="mobileOpenLayers" type="button">表示</button>
+  </div>
+  <div id="mobileSheet" class="mobile-sheet" aria-hidden="true">
+    <div class="mobile-sheet-head">
+      <b id="mobileSheetTitle">操作</b>
+      <button id="mobileSheetClose" type="button">閉じる</button>
+    </div>
+    <div id="mobileSheetBody" class="mobile-sheet-body"></div>
   </div>
   <nav class="mobile-nav" aria-label="スマホ表示切替">
     <button type="button" data-tab="map" class="active">地図</button>
@@ -320,11 +347,17 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260620-cross-pref-ux-mobile"></script>
+  <script src="national_homecare_data/manifest.js?v=20260620-mode-mobile-ux"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
+    const mapModes = {
+      sales:{label:"営業先探索",short:"営業",desc:"居宅・医療連携先・訪問看護を中心に、営業先候補を探します。",groups:["居宅介護支援","病院","訪問診療対応診療所","訪問看護"],market:"meshElderly75PerVisitNursing",stations:false,names:false,catchment:false},
+      expansion:{label:"出店・展開検討",short:"展開",desc:"高齢者需要と訪問看護供給のバランスを見て、展開余地を探します。",groups:["訪問看護","居宅介護支援","病院"],market:"meshElderly75Density2025",stations:false,names:false,catchment:false},
+      competition:{label:"競合分析",short:"競合",desc:"訪問看護の密度と周辺需要から、競争が強い地域・空白地域を見ます。",groups:["訪問看護"],market:"meshVisitNursingSupply",stations:false,names:false,catchment:false},
+      medical:{label:"医療連携分析",short:"医療",desc:"病院・訪問診療対応診療所と訪問看護の位置関係を見ます。",groups:["病院","訪問診療対応診療所","訪問看護"],market:"meshMedicalPartnerSupply",stations:true,names:true,catchment:false}
+    };
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     map.createPane("comparePane");
     map.getPane("comparePane").style.zIndex = 360;
@@ -400,6 +433,20 @@
     function fillPref(){
       document.querySelector("#pref").innerHTML = '<option value="">都道府県を選択</option>' + manifest.prefectures.map(p => '<option value="'+p.code+'">'+p.name+'（'+yen(p.count)+'）</option>').join("");
     }
+    function fillModes(){
+      const html=Object.entries(mapModes).map(([key,mode])=>'<button type="button" class="mode-button" data-mode="'+key+'">'+mode.label+'<span>'+mode.desc+'</span></button>').join("");
+      const mobileHtml=Object.entries(mapModes).map(([key,mode])=>'<button type="button" data-mode="'+key+'">'+mode.short+'</button>').join("");
+      document.querySelector("#modeButtons").innerHTML=html;
+      document.querySelector("#mobileModeBar").innerHTML=mobileHtml;
+      document.querySelectorAll("[data-mode]").forEach(button=>button.addEventListener("click",()=>applyMode(button.dataset.mode)));
+      updateModeUi();
+    }
+    function updateModeUi(){
+      const mode=mapModes[state.mode];
+      document.querySelectorAll("[data-mode]").forEach(button=>button.classList.toggle("active",button.dataset.mode===state.mode));
+      const status=document.querySelector("#modeStatus");
+      if(status)status.textContent=mode ? mode.label+"： "+mode.desc : "施設レイヤーは初期未選択です。目的が決まったら分析モードを選んでください。";
+    }
     function fillLayers(){
       const primary = priorityGroups.filter(g=>manifest.groups.includes(g));
       const other = manifest.groups.filter(g=>!priorityGroups.includes(g));
@@ -409,17 +456,23 @@
         other.map(g => '<label class="check"><input type="checkbox" data-group="'+g+'"><span class="dot" style="background:'+colorFor(g)+'"></span>'+g+'</label>').join("")+
         '</details>';
       document.querySelectorAll("#layers input").forEach(input => input.addEventListener("change", () => {
+        state.mode="";
         state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
+        updateModeUi();
         renderFacilities();
       }));
       document.querySelector("#selectOtherLayers")?.addEventListener("click",()=>{
         other.forEach(g=>{const input=document.querySelector('#layers input[data-group="'+CSS.escape(g)+'"]'); if(input)input.checked=true});
+        state.mode="";
         state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
+        updateModeUi();
         renderFacilities();
       });
       document.querySelector("#clearOtherLayers")?.addEventListener("click",()=>{
         other.forEach(g=>{const input=document.querySelector('#layers input[data-group="'+CSS.escape(g)+'"]'); if(input)input.checked=false});
+        state.mode="";
         state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
+        updateModeUi();
         renderFacilities();
       });
     }
@@ -429,10 +482,22 @@
       state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
       renderFacilities();
     }
-    function applySalesPreset(){
-      setFacilityLayerGroups(["居宅介護支援","病院","訪問診療対応診療所","訪問看護"]);
-      if(!document.querySelector("#marketVariable").value) document.querySelector("#marketVariable").value="meshElderly75PerVisitNursing";
+    function applyMode(key){
+      const mode=mapModes[key]||mapModes.sales;
+      state.mode=key;
+      setFacilityLayerGroups(mode.groups);
+      document.querySelector("#marketVariable").value=mode.market||"";
+      document.querySelector("#showStations").checked=!!mode.stations;
+      document.querySelector("#showStationNames").checked=!!mode.names;
+      document.querySelector("#showStationCatchment").checked=!!mode.catchment;
+      updateModeUi();
       renderMarketLayer();
+      renderStations();
+      renderMobileSheet();
+      switchTab("map");
+    }
+    function applySalesPreset(){
+      applyMode("sales");
     }
     function loadPref(code){
       return new Promise((resolve,reject)=>{
@@ -531,7 +596,7 @@
       rows.forEach(f=>{
         const radius = f.code==="medical_hospital" ? 8 : f.code==="medical_clinic" ? 7 : f.code==="130" ? 6 : f.code==="430" ? 5 : 3;
         const weight = f.code==="medical_hospital" || f.code==="medical_clinic" ? 2 : 1;
-        const marker = L.circleMarker([f.lat,f.lng],{pane:"facilityPane",radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false);renderCompareMiniPanel()}).addTo(facilityLayer);
+        const marker = L.circleMarker([f.lat,f.lng],{pane:"facilityPane",radius,color:colorFor(f.group),fillColor:colorFor(f.group),fillOpacity:.82,opacity:.95,weight}).bindPopup(popup(f)).on("click",()=>{state.selected=f;renderSelected(false);renderCompareMiniPanel();if(window.innerWidth<=900)openMobileSheet("selected")}).addTo(facilityLayer);
         markerByUid.set(f.uid, marker);
         if (f.code==="medical_hospital" || f.code==="medical_clinic") marker.bringToFront();
       });
@@ -539,6 +604,7 @@
       document.querySelector("#visibleCount").textContent=unit(rows.length,"施設");
       document.querySelector("#nursingCount").textContent=unit(rows.filter(f=>f.code==="130").length,"施設");
       document.querySelector("#cmCount").textContent=unit(rows.filter(f=>f.code==="430").length,"施設");
+      renderMobileSheet();
     }
     let stationRenderSeq = 0;
     let stationRenderTimer = null;
@@ -988,10 +1054,67 @@
     }
     function renderSelected(drawNow){
       const box=document.querySelector("#selectedFacility");
-      if(!state.selected){box.textContent="地図上の施設をクリックし、「この施設を商圏中心にする」を押してください。";return}
+      if(!state.selected){box.textContent="地図上の施設をクリックし、「この施設を商圏中心にする」を押してください。";renderMobileSheet();return}
       const f=state.selected;
       box.innerHTML='<b>'+f.name+'</b><br>'+f.serviceLabel+' / '+(f.city||"-")+'<br>'+f.address;
+      renderMobileSheet();
       if(drawNow)drawTradeArea();
+    }
+    function mobileSelectedHtml(){
+      if(!state.selected)return '<div class="selected">地図上の施設をタップすると、ここに施設詳細と商圏操作が表示されます。</div>';
+      const f=state.selected;
+      return '<div class="selected"><b>'+escapeHtml(f.name)+'</b><br>'+escapeHtml(f.serviceLabel)+' / '+escapeHtml(f.city||"-")+'<br>'+escapeHtml(f.address||"")+'<br>'+(f.phone?'<b>電話:</b> '+escapeHtml(f.phone):"")+'</div>'+
+        '<div class="grid2"><input id="mobileTradeRadius" type="number" min="0.1" step="0.1" value="'+escapeHtml(document.querySelector("#tradeRadius").value||"2")+'" aria-label="スマホ商圏半径km"><button id="mobileDrawTrade" type="button">商圏を描画</button></div>'+
+        '<div class="mobile-sheet-actions"><button id="mobileExportTrade" type="button">CSV出力</button><button id="mobileExportReport" type="button">PDF出力</button><button id="mobileAddTradeCompare" type="button">比較に追加</button><button id="mobileOpenAnalysis" type="button">分析を見る</button></div>'+
+        '<div class="trade-scope">'+escapeHtml(document.querySelector("#tradeScopeStatus")?.textContent||"商圏を描画すると集計します。")+'</div>';
+    }
+    function mobileAreaHtml(){
+      return '<div class="label">対象地域</div><div class="selected">'+escapeHtml((state.data?.prefName||"都道府県未選択")+' / '+(state.city||"市区町村すべて"))+'</div>'+
+        '<div class="mobile-sheet-actions"><button id="mobileFitVisible" type="button">表示範囲へ</button><button id="mobileLocateMe" type="button">現在地</button><button id="mobileAddCityCompare" type="button">市区町村を比較</button><button id="mobileOpenCompare" type="button">比較を見る</button></div>'+
+        '<div class="sub">地域の変更は下の通常フォーム、またはPCでは左パネルから行えます。</div>';
+    }
+    function mobileLayersHtml(){
+      const mode=mapModes[state.mode];
+      const groups=[...state.groups].join(" / ")||"未選択";
+      return '<div class="selected"><b>'+escapeHtml(mode?.label||"カスタム表示")+'</b><br>'+escapeHtml(mode?.desc||"分析モードを選ぶと、施設レイヤーと市場変数が自動で切り替わります。")+'</div>'+
+        '<div class="selected"><b>表示施設</b><br>'+escapeHtml(groups)+'</div>'+
+        '<div class="selected"><b>市場変数</b><br>'+escapeHtml(marketVariableLabel(document.querySelector("#marketVariable").value)||"なし")+'</div>'+
+        '<div class="mobile-sheet-actions"><button id="mobileApplySalesMode" type="button">営業モード</button><button id="mobileClearLayers" type="button">全解除</button><button id="mobileToggleStations" type="button">駅ON/OFF</button><button id="mobileOpenMap" type="button">地図へ戻る</button></div>';
+    }
+    function openMobileSheet(kind){
+      const titles={area:"地域",selected:"施設・商圏",layers:"表示設定"};
+      document.querySelector("#mobileSheet").dataset.kind=kind;
+      document.querySelector("#mobileSheetTitle").textContent=titles[kind]||"操作";
+      renderMobileSheet();
+      document.querySelector("#mobileSheet").classList.add("open");
+      document.querySelector("#mobileSheet").setAttribute("aria-hidden","false");
+    }
+    function closeMobileSheet(){
+      document.querySelector("#mobileSheet").classList.remove("open");
+      document.querySelector("#mobileSheet").setAttribute("aria-hidden","true");
+    }
+    function renderMobileSheet(){
+      const sheet=document.querySelector("#mobileSheet");
+      const body=document.querySelector("#mobileSheetBody");
+      if(!sheet||!body)return;
+      const kind=sheet.dataset.kind||"selected";
+      body.innerHTML=kind==="area"?mobileAreaHtml():kind==="layers"?mobileLayersHtml():mobileSelectedHtml();
+      bindMobileSheetActions();
+    }
+    function bindMobileSheetActions(){
+      document.querySelector("#mobileDrawTrade")?.addEventListener("click",()=>{document.querySelector("#tradeRadius").value=document.querySelector("#mobileTradeRadius").value;updateRadiusChips();drawTradeArea()});
+      document.querySelector("#mobileExportTrade")?.addEventListener("click",exportTradeCsv);
+      document.querySelector("#mobileExportReport")?.addEventListener("click",exportTradeReportPdf);
+      document.querySelector("#mobileAddTradeCompare")?.addEventListener("click",addTradeCompare);
+      document.querySelector("#mobileOpenAnalysis")?.addEventListener("click",()=>{renderAnalysis();switchTab("analysis");closeMobileSheet()});
+      document.querySelector("#mobileFitVisible")?.addEventListener("click",fitVisibleFacilities);
+      document.querySelector("#mobileLocateMe")?.addEventListener("click",()=>document.querySelector("#locateMe").click());
+      document.querySelector("#mobileAddCityCompare")?.addEventListener("click",addCityCompare);
+      document.querySelector("#mobileOpenCompare")?.addEventListener("click",()=>{renderCompare();switchTab("compare");closeMobileSheet()});
+      document.querySelector("#mobileApplySalesMode")?.addEventListener("click",()=>applyMode("sales"));
+      document.querySelector("#mobileClearLayers")?.addEventListener("click",()=>{state.mode="";updateModeUi();setFacilityLayerGroups([]);renderMobileSheet()});
+      document.querySelector("#mobileToggleStations")?.addEventListener("click",()=>{const input=document.querySelector("#showStations");input.checked=!input.checked;renderStations();renderMobileSheet()});
+      document.querySelector("#mobileOpenMap")?.addEventListener("click",()=>{switchTab("map");closeMobileSheet()});
     }
     function tradeFacilities(){
       if(!state.selected||!state.data)return [];
@@ -1282,6 +1405,7 @@
       document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+tradePrefNames()+'</b>抽出対象</div>';
       renderAnalysis();
       if(isMeshVariable(document.querySelector("#marketVariable").value)) renderMarketLayer();
+      renderMobileSheet();
     }
     function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
     function exportTradeCsv(){
@@ -1335,7 +1459,11 @@
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
     document.querySelector("#presetSalesLayers").addEventListener("click",applySalesPreset);
-    document.querySelector("#clearFacilityLayers").addEventListener("click",()=>setFacilityLayerGroups([]));
+    document.querySelector("#clearFacilityLayers").addEventListener("click",()=>{state.mode="";updateModeUi();setFacilityLayerGroups([])});
+    document.querySelector("#mobileOpenArea").addEventListener("click",()=>openMobileSheet("area"));
+    document.querySelector("#mobileOpenSelected").addEventListener("click",()=>openMobileSheet("selected"));
+    document.querySelector("#mobileOpenLayers").addEventListener("click",()=>openMobileSheet("layers"));
+    document.querySelector("#mobileSheetClose").addEventListener("click",closeMobileSheet);
     document.querySelector("#showStations").addEventListener("change",renderStations);
     document.querySelector("#showStationNames").addEventListener("change",renderStations);
     document.querySelector("#showStationCatchment").addEventListener("change",renderStations);
@@ -1351,7 +1479,7 @@
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
     document.querySelector("#exportTradeReport").addEventListener("click",exportTradeReportPdf);
     document.querySelector("#exportAnalysisReport").addEventListener("click",exportTradeReportPdf);
-    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.tradePrefCodes=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";renderAnalysis();renderMarketLayer()});
+    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.tradePrefCodes=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";renderAnalysis();renderMarketLayer();renderMobileSheet()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
     document.querySelector("#compareTabButton").addEventListener("click",()=>{renderCompare();switchTab("compare")});
@@ -1389,7 +1517,7 @@
     document.querySelector("#quickExportCompare").addEventListener("click",exportCompareCsv);
     document.querySelector("#quickClearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderFacilities();renderCompare()});
     document.querySelector("#openCompareDetail").addEventListener("click",()=>{renderCompare();switchTab("compare")});
-    window.selectFacility=uid=>{if(!state.data)return;const f=displayFacilityDatasets().flatMap(data=>data.facilities||[]).find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true);renderCompareMiniPanel()};
+    window.selectFacility=uid=>{if(!state.data)return;const f=displayFacilityDatasets().flatMap(data=>data.facilities||[]).find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true);renderCompareMiniPanel();if(window.innerWidth<=900)openMobileSheet("selected")};
     window.removeCompareArea=index=>{state.compareAreas.splice(index,1);renderFacilities();renderCompare()};
     window.focusCompareArea=index=>{
       const area=state.compareAreas[index];
@@ -1416,7 +1544,7 @@
       if(marker) marker.openPopup();
       else L.popup().setLatLng([f.lat,f.lng]).setContent(popup(f)).openOn(map);
     }
-    fillPref(); fillLayers(); renderFacilities(); renderCompareMiniPanel();
+    fillPref(); fillLayers(); fillModes(); renderFacilities(); renderCompareMiniPanel(); renderMobileSheet();
   </script>
 </body>
 </html>
