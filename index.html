@@ -38,6 +38,10 @@
     .variable-row{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
     .legend-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:11px;color:var(--muted);line-height:1.45}
     .legend-scale{height:8px;border-radius:99px;background:linear-gradient(90deg,#e8f1ff,#88b8ff,#0057ff);margin:6px 0}
+    .quick-guide{display:grid;gap:6px;border:1px solid #c7d7fe;border-radius:8px;background:#f5f8ff;padding:10px;margin-top:10px;font-size:12px;color:#344054}
+    .quick-guide b{color:#0b57d0}
+    .preset-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+    .trade-scope{margin-top:8px;border:1px solid #d9e0ea;border-radius:8px;background:#fff;padding:8px;font-size:11px;color:#667085;line-height:1.45}
     .station-label{pointer-events:none}
     .station-label span{display:inline-block;white-space:nowrap;border:1px solid rgba(15,118,110,.35);border-radius:999px;background:rgba(255,255,255,.92);box-shadow:0 1px 5px rgba(16,24,40,.16);padding:2px 7px;color:#0f3d3a;font-size:11px;font-weight:900;line-height:1.35}
     .station-controls{display:grid;gap:7px}
@@ -94,7 +98,7 @@
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){body{padding-bottom:58px}.app{grid-template-columns:1fr;height:auto}.tabs{display:none}#map{height:64vh;min-height:430px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
+    @media (max-width:900px){body{padding-bottom:58px}.app{grid-template-columns:1fr;height:auto}.tabs{display:none}#map{order:-1;height:56vh;min-height:360px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -103,6 +107,7 @@
       <header>
         <h1>全国 訪問看護 営業・市場分析マップ</h1>
         <div class="sub">都道府県データを選択時に読み込む全国版MVPです。施設レイヤーは初期未選択です。</div>
+        <div class="quick-guide"><b>使い方</b><span>1. 地域を選ぶ → 2. 営業先プリセットを押す → 3. 施設をクリックして商圏分析 → 4. CSV/PDF出力</span></div>
       </header>
 
       <nav class="tabs" aria-label="表示切替">
@@ -159,6 +164,10 @@
 
       <section class="panel">
         <div class="label">施設レイヤー</div>
+        <div class="preset-actions">
+          <button id="presetSalesLayers" type="button">営業先プリセット</button>
+          <button id="clearFacilityLayers" type="button">全解除</button>
+        </div>
         <div id="layers" class="checks"></div>
       </section>
 
@@ -219,6 +228,7 @@
         <div id="tradeResult" class="trade-result" style="margin-top:8px">
           <div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>
         </div>
+        <div id="tradeScopeStatus" class="trade-scope">商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。</div>
       </section>
       </div>
 
@@ -310,10 +320,10 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260619-remove-daytime-alpha"></script>
+  <script src="national_homecare_data/manifest.js?v=20260620-cross-pref-ux-mobile"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, meshData:null, meshLoading:null, meshSupplyData:null, meshSupplyLoading:null, meshSupplyMap:null, meshTradeEstimate:null, compareAreas:[], stationData:null, stationLoading:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), selected:null, tradeRows:[], data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     map.createPane("comparePane");
@@ -352,6 +362,25 @@
     function density2020Color(value){const item=density2020Breaks.find(b=>value>=b.min&&value<b.max)||density2020Breaks[0];return item.color}
     function colorFor(key){if(colors[key])return colors[key];let h=0;for(let i=0;i<key.length;i++)h=((h<<5)-h+key.charCodeAt(i))|0;return "hsl("+(Math.abs(h)%360)+" 62% 38%)"}
     function distanceKm(aLat,aLng,bLat,bLng){const r=6371,dLat=(bLat-aLat)*Math.PI/180,dLng=(bLng-aLng)*Math.PI/180,s1=Math.sin(dLat/2),s2=Math.sin(dLng/2),a=s1*s1+Math.cos(aLat*Math.PI/180)*Math.cos(bLat*Math.PI/180)*s2*s2;return 2*r*Math.atan2(Math.sqrt(a),Math.sqrt(1-a))}
+    function prefNameFor(code){return manifest.prefectures.find(p=>p.code===code)?.name||code}
+    function circleBbox(lat,lng,radiusKm){const dLat=radiusKm/111;const dLng=radiusKm/(111*Math.max(.2,Math.cos(lat*Math.PI/180)));return [lat-dLat,lng-dLng,lat+dLat,lng+dLng]}
+    function bboxDistanceKm(lat,lng,b){const clampedLat=Math.max(b[0],Math.min(b[2],lat));const clampedLng=Math.max(b[1],Math.min(b[3],lng));return distanceKm(lat,lng,clampedLat,clampedLng)}
+    function prefCodesForCircle(lat,lng,radiusKm){
+      const bbox=circleBbox(lat,lng,radiusKm);
+      const codes=(manifest.prefBounds||[]).filter(item=>{
+        const b=item.b;
+        const bboxOverlap=!(b[2]<bbox[0]||b[0]>bbox[2]||b[3]<bbox[1]||b[1]>bbox[3]);
+        return bboxOverlap && bboxDistanceKm(lat,lng,b)<=radiusKm+8;
+      }).map(item=>item.code);
+      if(state.pref&&!codes.includes(state.pref))codes.unshift(state.pref);
+      return codes.length?codes:[state.pref].filter(Boolean);
+    }
+    function activeScopePrefCodes(){
+      const radius=Number(document.querySelector("#tradeRadius")?.value||0);
+      if(state.selected&&radius>0&&state.tradePrefCodes.length)return state.tradePrefCodes;
+      return [state.pref].filter(Boolean);
+    }
+    function tradePrefNames(){return activeScopePrefCodes().map(prefNameFor).join(" / ")}
     function switchTab(tab){
       document.querySelector("#mapTab").classList.toggle("active",tab==="map");
       document.querySelector("#analysisTab").classList.toggle("active",tab==="analysis");
@@ -394,12 +423,23 @@
         renderFacilities();
       });
     }
+    function setFacilityLayerGroups(groups){
+      const wanted=new Set(groups);
+      document.querySelectorAll("#layers input[data-group]").forEach(input=>{input.checked=wanted.has(input.dataset.group)});
+      state.groups = new Set([...document.querySelectorAll("#layers input:checked")].map(el => el.dataset.group));
+      renderFacilities();
+    }
+    function applySalesPreset(){
+      setFacilityLayerGroups(["居宅介護支援","病院","訪問診療対応診療所","訪問看護"]);
+      if(!document.querySelector("#marketVariable").value) document.querySelector("#marketVariable").value="meshElderly75PerVisitNursing";
+      renderMarketLayer();
+    }
     function loadPref(code){
       return new Promise((resolve,reject)=>{
-        if(window.NATIONAL_HOMECARE_DATA && window.NATIONAL_HOMECARE_DATA[code]) return resolve(window.NATIONAL_HOMECARE_DATA[code]);
+        if(window.NATIONAL_HOMECARE_DATA && window.NATIONAL_HOMECARE_DATA[code]) { state.dataByPref[code]=window.NATIONAL_HOMECARE_DATA[code]; return resolve(window.NATIONAL_HOMECARE_DATA[code]); }
         const script=document.createElement("script");
         script.src="national_homecare_data/pref_"+code+".js?v="+encodeURIComponent(manifest.generatedAt);
-        script.onload=()=>resolve(window.NATIONAL_HOMECARE_DATA[code]);
+        script.onload=()=>{state.dataByPref[code]=window.NATIONAL_HOMECARE_DATA[code];resolve(window.NATIONAL_HOMECARE_DATA[code])};
         script.onerror=reject;
         document.body.appendChild(script);
       });
@@ -408,36 +448,38 @@
       const available = (manifest.meshes||[]).some(m=>m.prefCode===code);
       if(!available) return Promise.resolve(null);
       if(window.NATIONAL_HOMECARE_MESH && window.NATIONAL_HOMECARE_MESH[code]) {
-        state.meshData=window.NATIONAL_HOMECARE_MESH[code];
-        return Promise.resolve(state.meshData);
+        state.meshDataByPref[code]=window.NATIONAL_HOMECARE_MESH[code];
+        if(code===state.pref)state.meshData=window.NATIONAL_HOMECARE_MESH[code];
+        return Promise.resolve(window.NATIONAL_HOMECARE_MESH[code]);
       }
-      if(state.meshLoading) return state.meshLoading;
-      state.meshLoading = new Promise((resolve,reject)=>{
+      if(state.meshLoadingByPref[code]) return state.meshLoadingByPref[code];
+      state.meshLoadingByPref[code] = new Promise((resolve,reject)=>{
         const script=document.createElement("script");
         script.src="national_homecare_data/mesh_"+code+"_500m.js?v="+encodeURIComponent(manifest.generatedAt);
-        script.onload=()=>{state.meshData=window.NATIONAL_HOMECARE_MESH?.[code]||null;resolve(state.meshData)};
-        script.onerror=()=>{state.meshData=null;resolve(null)};
+        script.onload=()=>{state.meshDataByPref[code]=window.NATIONAL_HOMECARE_MESH?.[code]||null;if(code===state.pref)state.meshData=state.meshDataByPref[code];resolve(state.meshDataByPref[code])};
+        script.onerror=()=>{state.meshDataByPref[code]=null;if(code===state.pref)state.meshData=null;resolve(null)};
         document.body.appendChild(script);
       });
-      return state.meshLoading;
+      return state.meshLoadingByPref[code];
     }
     function loadMeshSupply(code){
       const available = (manifest.meshSupply||[]).some(m=>m.prefCode===code);
       if(!available) return Promise.resolve(null);
       if(window.NATIONAL_HOMECARE_MESH_SUPPLY && window.NATIONAL_HOMECARE_MESH_SUPPLY[code]) {
-        state.meshSupplyData=window.NATIONAL_HOMECARE_MESH_SUPPLY[code];
-        state.meshSupplyMap=new Map((state.meshSupplyData.rows||[]).map(row=>[row.id,row]));
-        return Promise.resolve(state.meshSupplyData);
+        state.meshSupplyDataByPref[code]=window.NATIONAL_HOMECARE_MESH_SUPPLY[code];
+        state.meshSupplyMapByPref[code]=new Map((state.meshSupplyDataByPref[code].rows||[]).map(row=>[row.id,row]));
+        if(code===state.pref){state.meshSupplyData=state.meshSupplyDataByPref[code];state.meshSupplyMap=state.meshSupplyMapByPref[code]}
+        return Promise.resolve(state.meshSupplyDataByPref[code]);
       }
-      if(state.meshSupplyLoading) return state.meshSupplyLoading;
-      state.meshSupplyLoading = new Promise((resolve)=>{
+      if(state.meshSupplyLoadingByPref[code]) return state.meshSupplyLoadingByPref[code];
+      state.meshSupplyLoadingByPref[code] = new Promise((resolve)=>{
         const script=document.createElement("script");
         script.src="national_homecare_data/mesh_supply_"+code+"_500m.js?v="+encodeURIComponent(manifest.generatedAt);
-        script.onload=()=>{state.meshSupplyData=window.NATIONAL_HOMECARE_MESH_SUPPLY?.[code]||null;state.meshSupplyMap=state.meshSupplyData?new Map((state.meshSupplyData.rows||[]).map(row=>[row.id,row])):null;resolve(state.meshSupplyData)};
-        script.onerror=()=>{state.meshSupplyData=null;state.meshSupplyMap=null;resolve(null)};
+        script.onload=()=>{state.meshSupplyDataByPref[code]=window.NATIONAL_HOMECARE_MESH_SUPPLY?.[code]||null;state.meshSupplyMapByPref[code]=state.meshSupplyDataByPref[code]?new Map((state.meshSupplyDataByPref[code].rows||[]).map(row=>[row.id,row])):null;if(code===state.pref){state.meshSupplyData=state.meshSupplyDataByPref[code];state.meshSupplyMap=state.meshSupplyMapByPref[code]}resolve(state.meshSupplyDataByPref[code])};
+        script.onerror=()=>{state.meshSupplyDataByPref[code]=null;state.meshSupplyMapByPref[code]=null;if(code===state.pref){state.meshSupplyData=null;state.meshSupplyMap=null}resolve(null)};
         document.body.appendChild(script);
       });
-      return state.meshSupplyLoading;
+      return state.meshSupplyLoadingByPref[code];
     }
     function loadStations(){
       if(window.NATIONAL_HOMECARE_STATIONS?.ALL){
@@ -454,10 +496,17 @@
       });
       return state.stationLoading;
     }
+    function displayFacilityDatasets(){
+      const codes=new Set([state.pref].filter(Boolean));
+      state.tradePrefCodes.forEach(code=>codes.add(code));
+      state.compareAreas.forEach(area=>(area.prefCodes||[]).forEach(code=>codes.add(code)));
+      return [...codes].map(code=>state.dataByPref[code]||((code===state.pref)?state.data:null)).filter(Boolean);
+    }
     function filtered(){
       if(!state.data)return [];
       const q=state.q.trim().toLowerCase();
-      return state.data.facilities.filter(f=>{
+      const facilities=displayFacilityDatasets().flatMap(data=>data.facilities||[]);
+      return facilities.filter(f=>{
         if(!isAllCity() && (f.city||"市区町村未設定")!==state.city && !facilityInCompareAreas(f))return false;
         if(!state.groups.has(f.group))return false;
         if(!q)return true;
@@ -577,7 +626,8 @@
       return key==="meshVisitNursingSupply" || key==="meshCareManagerSupply" || key==="meshMedicalPartnerSupply" || key==="meshElderly75PerVisitNursing";
     }
     function meshSupplyFor(row){
-      return state.meshSupplyMap?.get(row.id) || {};
+      const code=row._pref||state.pref;
+      return state.meshSupplyMapByPref[code]?.get(row.id) || state.meshSupplyMap?.get(row.id) || {};
     }
     function meshValue(row,key){
       const supply=meshSupplyFor(row);
@@ -635,9 +685,14 @@
       return '<b>メッシュ人口・高齢者情報</b><br>メッシュID: '+r.id+'<br>'+label+': '+valueText+'<br>夜間人口2020: '+unit(r.p20,"人")+'<br>75歳以上2025推計: '+unit(r.e75_25,"人")+'<br>人口密度2020: '+densityUnit(density)+'<br>75歳以上密度2025: '+densityUnit(elderlyDensity)+'<br>面積: '+(Number(r.a||0).toFixed(2))+' km²'+supplyText+'<br>'+(r.city||"");
     }
     function meshRowsInScope(){
-      if(!state.meshData)return [];
-      let rows=state.meshData.rows||[];
-      if(state.city && !isAllCity()) rows=rows.filter(r=>(r.city||"")===state.city);
+      const radius=Number(document.querySelector("#tradeRadius")?.value||0);
+      const useTradeScope=!!(state.selected&&radius>0&&state.tradePrefCodes.length);
+      const meshSources=useTradeScope
+        ? state.tradePrefCodes.map(code=>state.meshDataByPref[code]).filter(Boolean)
+        : [state.meshData].filter(Boolean);
+      if(!meshSources.length)return [];
+      let rows=meshSources.flatMap(mesh=>(mesh.rows||[]).map(r=>Object.assign({_pref:mesh.prefCode},r)));
+      if(!useTradeScope && state.city && !isAllCity()) rows=rows.filter(r=>(r.city||"")===state.city);
       if(state.selected && Number(document.querySelector("#tradeRadius").value||0)>0){
         const radius=Number(document.querySelector("#tradeRadius").value||0);
         rows=rows.filter(r=>distanceKm(state.selected.lat,state.selected.lng,r.c[0],r.c[1])<=radius);
@@ -670,16 +725,20 @@
     }
     const compareColors=["#0b57d0","#d92d20","#0f8a5f"];
     function areaMeshRows(area){
-      if(!state.meshData)return [];
-      let rows=state.meshData.rows||[];
+      const codes=area.type==="trade"&&area.prefCodes?.length ? area.prefCodes : [area.pref||state.pref].filter(Boolean);
+      const meshes=codes.map(code=>state.meshDataByPref[code]||((code===state.pref)?state.meshData:null)).filter(Boolean);
+      if(!meshes.length)return [];
+      let rows=meshes.flatMap(mesh=>(mesh.rows||[]).map(r=>Object.assign({_pref:mesh.prefCode},r)));
       if(area.type==="city") return rows.filter(r=>(r.city||"")===area.city);
       if(area.type==="trade") return rows.filter(r=>distanceKm(area.center[0],area.center[1],r.c[0],r.c[1])<=area.radius);
       return [];
     }
     function areaFacilities(area){
-      if(!state.data)return [];
-      if(area.type==="city") return state.data.facilities.filter(f=>(f.city||"市区町村未設定")===area.city);
-      if(area.type==="trade") return state.data.facilities.filter(f=>distanceKm(area.center[0],area.center[1],f.lat,f.lng)<=area.radius);
+      const codes=area.type==="trade"&&area.prefCodes?.length ? area.prefCodes : [area.pref||state.pref].filter(Boolean);
+      const datasets=codes.map(code=>state.dataByPref[code]||((code===state.pref)?state.data:null)).filter(Boolean);
+      const facilities=datasets.flatMap(data=>data.facilities||[]);
+      if(area.type==="city") return facilities.filter(f=>(f.city||"市区町村未設定")===area.city);
+      if(area.type==="trade") return facilities.filter(f=>distanceKm(area.center[0],area.center[1],f.lat,f.lng)<=area.radius);
       return [];
     }
     function summarizeArea(area){
@@ -754,7 +813,7 @@
       const hint=document.querySelector("#compareQuickHint");
       if(!root)return;
       if(hint){
-        const cityReady=state.data && state.city && state.city!=="縺吶∋縺ｦ";
+        const cityReady=state.data && state.city && state.city!=="すべて";
         const tradeReady=state.selected && Number(document.querySelector("#tradeRadius")?.value||0)>0;
         hint.textContent=cityReady ? "選択中の市区町村をすぐ比較に追加できます。" : (tradeReady ? "選択中の施設商圏を比較に追加できます。" : "市区町村または施設商圏を選ぶと、ここから比較に追加できます。");
       }
@@ -783,8 +842,10 @@
     async function addCompareArea(area){
       if(!state.data || !state.pref)return;
       if(state.compareAreas.length>=3) state.compareAreas.shift();
-      await loadMesh(state.pref);
       area.pref=state.pref;
+      area.prefCodes=area.type==="trade" ? prefCodesForCircle(area.center[0],area.center[1],area.radius) : [state.pref];
+      await Promise.all(area.prefCodes.map(code=>loadPref(code).catch(()=>null)));
+      await Promise.all(area.prefCodes.map(code=>loadMesh(code).catch(()=>null)));
       area.id=Date.now()+"-"+Math.random().toString(16).slice(2);
       area.summary=summarizeArea(area);
       state.compareAreas.push(area);
@@ -825,20 +886,24 @@
         legend.innerHTML="市場変数レイヤーは500mメッシュに統一しました。";
         return;
       }
+      const scopeCodes=activeScopePrefCodes();
       const mesh=await loadMesh(state.pref);
+      await Promise.all(scopeCodes.map(code=>loadMesh(code).catch(()=>null)));
       if(!mesh){
         legend.innerHTML="この都道府県の500mメッシュデータはまだ読み込まれていません。";
         return;
       }
       let supply=null;
       if(requiresMeshSupply(key)){
-        supply=await loadMeshSupply(state.pref);
+        await Promise.all(scopeCodes.map(code=>loadMeshSupply(code).catch(()=>null)));
+        supply=state.meshSupplyDataByPref[state.pref]||await loadMeshSupply(state.pref);
         if(!supply){
           legend.innerHTML="この都道府県の供給メッシュデータはまだ読み込まれていません。";
           return;
         }
       } else {
-        supply=await loadMeshSupply(state.pref);
+        await Promise.all(scopeCodes.map(code=>loadMeshSupply(code).catch(()=>null)));
+        supply=state.meshSupplyDataByPref[state.pref]||null;
       }
       const scoped=meshRowsInScope().filter(r=>meshValue(r,key)>0);
       if(!scoped.length){
@@ -909,6 +974,18 @@
       if(state.city && state.city!=="すべて" && !cities.includes(state.city)) state.city="すべて";
       document.querySelector("#city").value=state.city||"すべて";
     }
+    async function ensureTradeScope(){
+      if(!state.selected||!state.pref)return [state.pref].filter(Boolean);
+      const radius=Number(document.querySelector("#tradeRadius").value||0);
+      const codes=prefCodesForCircle(state.selected.lat,state.selected.lng,radius);
+      state.tradePrefCodes=codes;
+      const status=document.querySelector("#tradeScopeStatus");
+      if(status) status.textContent="商圏対象データを読み込み中: "+codes.map(prefNameFor).join(" / ");
+      await Promise.all(codes.map(code=>loadPref(code).catch(()=>null)));
+      await Promise.all(codes.map(code=>loadMesh(code).catch(()=>null)));
+      if(status) status.textContent="集計対象: "+codes.map(prefNameFor).join(" / ")+(codes.length>1?"（県境をまたぐ商圏として集計）":"");
+      return codes;
+    }
     function renderSelected(drawNow){
       const box=document.querySelector("#selectedFacility");
       if(!state.selected){box.textContent="地図上の施設をクリックし、「この施設を商圏中心にする」を押してください。";return}
@@ -919,7 +996,9 @@
     function tradeFacilities(){
       if(!state.selected||!state.data)return [];
       const radius=Number(document.querySelector("#tradeRadius").value||0);
-      return state.data.facilities.map(f=>({...f,distanceKm:distanceKm(state.selected.lat,state.selected.lng,f.lat,f.lng)})).filter(f=>f.distanceKm<=radius).sort((a,b)=>a.distanceKm-b.distanceKm);
+      const datasets=activeScopePrefCodes().map(code=>state.dataByPref[code]||((code===state.pref)?state.data:null)).filter(Boolean);
+      const facilities=datasets.flatMap(data=>data.facilities||[]);
+      return facilities.map(f=>({...f,distanceKm:distanceKm(state.selected.lat,state.selected.lng,f.lat,f.lng)})).filter(f=>f.distanceKm<=radius).sort((a,b)=>a.distanceKm-b.distanceKm);
     }
     function populationForCity(city){
       if(!state.data||!city)return null;
@@ -1139,7 +1218,7 @@
       const sourceNote='人口・高齢者人口は500mメッシュまたは市区町村按分による推計です。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
       const html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>商圏分析レポート</title>'+
         '<style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#17202a;font-family:"Yu Gothic","Meiryo",system-ui,sans-serif;font-size:12px;line-height:1.55}h1{font-size:22px;margin:0 0 6px}h2{font-size:14px;margin:18px 0 8px;border-bottom:1px solid #d9e0ea;padding-bottom:4px}.sub{color:#667085}.head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;border-bottom:3px solid #0b57d0;padding-bottom:10px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900;padding:4px 10px}.decision{border:1px solid #d9e0ea;border-left:5px solid #0b57d0;border-radius:8px;padding:10px;margin:12px 0}.decision strong{font-size:16px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.report-metric{border:1px solid #d9e0ea;border-radius:8px;padding:8px;background:#f8fafc;min-height:54px}.report-metric b{display:block;font-size:17px;line-height:1.1}.report-metric span{display:block;color:#667085;font-size:10px;margin-top:4px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score-line{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center}.meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:#0b57d0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #edf1f7;padding:6px 4px;text-align:left;vertical-align:top}th{font-size:10px;color:#344054;background:#f8fafc}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.note{font-size:10px;color:#667085;margin-top:14px}.pagebreak{break-before:page}@media print{button{display:none}}</style></head><body>'+
-        '<div class="head"><div><h1>商圏分析レポート</h1><div class="sub">'+escapeHtml(state.data?.prefName||"")+' / '+escapeHtml(state.selected.city||"-")+' / 半径 '+escapeHtml(radius)+'km</div></div><div class="sub">作成: '+escapeHtml(createdAt)+'</div></div>'+
+        '<div class="head"><div><h1>商圏分析レポート</h1><div class="sub">集計対象: '+escapeHtml(tradePrefNames())+' / '+escapeHtml(state.selected.city||"-")+' / 半径 '+escapeHtml(radius)+'km</div></div><div class="sub">作成: '+escapeHtml(createdAt)+'</div></div>'+
         '<h2>対象拠点</h2><table><tbody>'+
         '<tr><th>事業所名</th><td>'+escapeHtml(state.selected.name)+'</td><th>サービス</th><td>'+escapeHtml(state.selected.serviceLabel)+'</td></tr>'+
         '<tr><th>住所</th><td colspan="3">'+escapeHtml(state.selected.address||"-")+'</td></tr>'+
@@ -1195,14 +1274,12 @@
       tradeLayer.clearLayers();
       if(!state.selected)return;
       const radius=Number(document.querySelector("#tradeRadius").value||0);
+      await ensureTradeScope();
       state.tradeRows=tradeFacilities();
       state.meshTradeEstimate=null;
-      if((manifest.meshes||[]).some(m=>m.prefCode===state.pref)){
-        await loadMesh(state.pref);
-        state.meshTradeEstimate=aggregateMeshPopulation();
-      }
+      state.meshTradeEstimate=aggregateMeshPopulation();
       L.circle([state.selected.lat,state.selected.lng],{radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.75,weight:2,interactive:false}).addTo(tradeLayer);
-      document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+state.data.prefName+'</b>抽出対象</div>';
+      document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+tradePrefNames()+'</b>抽出対象</div>';
       renderAnalysis();
       if(isMeshVariable(document.querySelector("#marketVariable").value)) renderMarketLayer();
     }
@@ -1216,7 +1293,7 @@
       const header=["距離km","大分類","サービス","施設名","都道府県","市区町村","住所","電話","法人","ID/事業所番号","URL"];
       const csv=[header,...exportRows.map(f=>[f.distanceKm.toFixed(3),f.group,f.serviceLabel,f.name,f.pref,f.city,f.address,f.phone,f.corp,f.no,f.url])].map(r=>r.map(csvCell).join(",")).join("\n");
       const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
-      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="trade_area_facilities_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="trade_area_facilities_"+tradePrefNames().replace(/[ /]/g,"_")+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
     function exportSalesCsv(){
       const rows=targetRows();
@@ -1224,11 +1301,12 @@
       const header=["営業優先度","距離km","種別","施設名","都道府県","市区町村","住所","電話","ID/事業所番号","営業ステータス","担当者","次回アクション","メモ"];
       const csv=[header,...rows.map(f=>[f.salesScore,f.distanceKm.toFixed(3),f.group,f.name,f.pref,f.city,f.address,f.phone,f.no,"未着手","","",""])].map(r=>r.map(csvCell).join(",")).join("\n");
       const blob=new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"});
-      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sales_targets_"+state.data.prefName+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sales_targets_"+tradePrefNames().replace(/[ /]/g,"_")+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
-      state.pref=e.target.value; state.city="すべて"; state.selected=null; document.querySelector("#citySearch").value=""; state.compareAreas=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
-      state.meshData=null; state.meshLoading=null; state.meshSupplyData=null; state.meshSupplyLoading=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
+      state.pref=e.target.value; state.city="すべて"; state.selected=null; document.querySelector("#citySearch").value=""; state.compareAreas=[]; state.tradePrefCodes=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
+      state.meshData=null; state.meshSupplyData=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
+      document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";
       if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();scheduleRenderStations();return}
       state.data=await loadPref(state.pref);
       renderCities();
@@ -1256,6 +1334,8 @@
     document.querySelector("#citySearch").addEventListener("input",()=>{renderCities();renderFacilities();renderCitySummary();renderMarketLayer();renderCompareMiniPanel();scheduleRenderStations()});
     document.querySelector("#q").addEventListener("input",e=>{state.q=e.target.value;renderFacilities()});
     document.querySelector("#marketVariable").addEventListener("change",renderMarketLayer);
+    document.querySelector("#presetSalesLayers").addEventListener("click",applySalesPreset);
+    document.querySelector("#clearFacilityLayers").addEventListener("click",()=>setFacilityLayerGroups([]));
     document.querySelector("#showStations").addEventListener("change",renderStations);
     document.querySelector("#showStationNames").addEventListener("change",renderStations);
     document.querySelector("#showStationCatchment").addEventListener("change",renderStations);
@@ -1271,7 +1351,7 @@
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
     document.querySelector("#exportTradeReport").addEventListener("click",exportTradeReportPdf);
     document.querySelector("#exportAnalysisReport").addEventListener("click",exportTradeReportPdf);
-    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';renderAnalysis();renderMarketLayer()});
+    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.tradePrefCodes=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";renderAnalysis();renderMarketLayer()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
     document.querySelector("#compareTabButton").addEventListener("click",()=>{renderCompare();switchTab("compare")});
@@ -1309,7 +1389,7 @@
     document.querySelector("#quickExportCompare").addEventListener("click",exportCompareCsv);
     document.querySelector("#quickClearCompare").addEventListener("click",()=>{state.compareAreas=[];compareLayer.clearLayers();renderFacilities();renderCompare()});
     document.querySelector("#openCompareDetail").addEventListener("click",()=>{renderCompare();switchTab("compare")});
-    window.selectFacility=uid=>{if(!state.data)return;const f=state.data.facilities.find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true);renderCompareMiniPanel()};
+    window.selectFacility=uid=>{if(!state.data)return;const f=displayFacilityDatasets().flatMap(data=>data.facilities||[]).find(x=>x.uid===uid);if(!f)return;state.selected=f;renderSelected(true);renderCompareMiniPanel()};
     window.removeCompareArea=index=>{state.compareAreas.splice(index,1);renderFacilities();renderCompare()};
     window.focusCompareArea=index=>{
       const area=state.compareAreas[index];
