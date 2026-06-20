@@ -89,6 +89,19 @@
     .score-line{display:grid;grid-template-columns:72px 1fr 42px;gap:8px;align-items:center;font-size:12px}
     .meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}
     .meter i{display:block;height:100%;background:var(--blue)}
+    .share-panel{display:grid;gap:9px;border:1px solid #c7d7fe;border-radius:8px;background:#f8fbff;padding:10px;margin-top:10px}
+    .share-inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .share-inputs label{display:grid;gap:4px;font-size:11px;font-weight:800;color:#344054}
+    .share-inputs input{background:#fff}
+    .share-note{font-size:11px;color:#667085;line-height:1.55}
+    .share-comment{border:1px solid #d9e0ea;border-left:4px solid #0b57d0;border-radius:8px;background:#fff;padding:9px;font-size:12px;line-height:1.55}
+    .share-assumptions{font-size:11px;color:#667085}
+    .share-assumptions summary{cursor:pointer;font-weight:800;color:#344054}
+    .analysis-details summary{cursor:pointer;font-size:12px;font-weight:900;color:#344054;list-style:none}
+    .analysis-details summary::-webkit-details-marker{display:none}
+    .analysis-details summary:after{content:"開く";float:right;color:var(--blue);font-size:11px}
+    .analysis-details[open] summary:after{content:"閉じる"}
+    .analysis-details .analysis-grid,.analysis-details .score-bars,.analysis-details .analysis-list{margin-top:10px}
     .city-summary{display:grid;gap:6px}
     .city-row{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #edf1f7;padding:7px 0;font-size:12px}
     .city-row b{font-size:13px}
@@ -115,7 +128,7 @@
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.trade-chip-stack{top:52px;right:8px;left:8px;max-width:none}.trade-chip-card{padding:9px 10px}.trade-chip-title{font-size:12px}.trade-chip{font-size:10px;padding:4px 7px}.trade-chip b{font-size:13px}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
+    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics,.share-inputs{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.trade-chip-stack{top:52px;right:8px;left:8px;max-width:none}.trade-chip-card{padding:9px 10px}.trade-chip-title{font-size:12px}.trade-chip{font-size:10px;padding:4px 7px}.trade-chip b{font-size:13px}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -263,19 +276,39 @@
             <button id="exportAnalysisReport" type="button">分析PDF</button>
           </div>
           <div id="analysisContext" class="selected">地図タブで施設を選択し、商圏を描画してください。</div>
+          <div class="share-panel">
+            <div class="label">自施設シェア試算</div>
+            <div class="share-inputs">
+              <label>自施設利用者数<input id="ownClientCount" type="number" min="0" step="1" placeholder="例: 38"></label>
+              <label>訪問看護利用率<input id="visitNursingUseRate" type="number" min="0" max="100" step="0.1" value="12"></label>
+              <label>目標シェア率<input id="targetShareRate" type="number" min="0" max="100" step="1" value="30"></label>
+            </div>
+            <div id="shareSummary" class="analysis-grid"></div>
+            <div id="shareComment" class="share-comment">商圏を描画し、自施設利用者数を入力するとシェアを試算します。</div>
+            <details class="share-assumptions">
+              <summary>推計前提を見る</summary>
+              <div class="share-note">推定訪問看護利用者数 = 商圏内75歳以上人口 × 訪問看護利用率。実際の利用者数ではなく、経営検討用の暫定推計です。</div>
+            </details>
+          </div>
           <div id="analysisSummary" class="analysis-grid" style="margin-top:8px"></div>
         </section>
         <section class="panel">
-          <div class="label">4軸スコア</div>
-          <div id="scoreBreakdown" class="score-bars"></div>
+          <details class="analysis-details">
+            <summary>4軸スコア</summary>
+            <div id="scoreBreakdown" class="score-bars"></div>
+          </details>
         </section>
         <section class="panel">
-          <div class="label">主要カテゴリ</div>
-          <div id="prioritySummary" class="analysis-grid"></div>
+          <details class="analysis-details">
+            <summary>主要カテゴリ</summary>
+            <div id="prioritySummary" class="analysis-grid"></div>
+          </details>
         </section>
         <section class="panel">
-          <div class="label">サービス別件数</div>
-          <div id="serviceSummary" class="analysis-list"></div>
+          <details class="analysis-details">
+            <summary>サービス別件数</summary>
+            <div id="serviceSummary" class="analysis-list"></div>
+          </details>
         </section>
       </div>
 
@@ -357,10 +390,10 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260620-trade-chip-mesh-detail"></script>
+  <script src="national_homecare_data/manifest.js?v=20260620-share-estimate"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, ownClientCount:null, visitNursingUseRate:12, targetShareRate:30, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const mapModes = {
       sales:{label:"営業先探索",short:"営業",desc:"居宅・医療連携先・訪問看護を中心に、営業先候補を探します。",groups:["居宅介護支援","病院","訪問診療対応診療所","訪問看護"],market:"meshElderly75PerVisitNursing",stations:false,names:false,catchment:false},
@@ -1076,11 +1109,20 @@
       renderMobileSheet();
       if(drawNow)drawTradeArea();
     }
+    function mobileShareHtml(){
+      if(!state.tradeRows.length)return '<div class="share-note">商圏を描画すると、推定利用者数と自施設シェアを表示します。</div>';
+      const share=calculateShareEstimate(estimateTradePopulation(state.tradeRows));
+      return '<div class="share-panel"><div class="label">自施設シェア試算</div>'+
+        '<div class="share-inputs"><label>自施設利用者数<input id="mobileOwnClientCount" type="number" min="0" step="1" value="'+escapeHtml(share.own===null?"":share.own)+'" placeholder="例: 38"></label><label>利用率<input id="mobileVisitNursingUseRate" type="number" min="0" max="100" step="0.1" value="'+escapeHtml(share.useRate)+'"></label><label>目標シェア<input id="mobileTargetShareRate" type="number" min="0" max="100" step="1" value="'+escapeHtml(share.targetRate)+'"></label></div>'+
+        '<div class="analysis-grid"><div class="analysis-card"><b>'+yen(share.estimatedUsers)+'人</b>推定利用者</div><div class="analysis-card"><b>'+pct(share.ownShare)+'</b>自施設シェア</div><div class="analysis-card"><b>'+(share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"):"達成"))+'</b>目標まで</div><div class="analysis-card"><b>'+yen(share.remaining)+'人</b>残り余地</div></div>'+
+        '<div class="share-comment">'+escapeHtml(shareNarrative(share))+'</div></div>';
+    }
     function mobileSelectedHtml(){
       if(!state.selected)return '<div class="selected">地図上の施設をタップすると、ここに施設詳細と商圏操作が表示されます。</div>';
       const f=state.selected;
       return '<div class="selected"><b>'+escapeHtml(f.name)+'</b><br>'+escapeHtml(f.serviceLabel)+' / '+escapeHtml(f.city||"-")+'<br>'+escapeHtml(f.address||"")+'<br>'+(f.phone?'<b>電話:</b> '+escapeHtml(f.phone):"")+'</div>'+
         '<div class="grid2"><input id="mobileTradeRadius" type="number" min="0.1" step="0.1" value="'+escapeHtml(document.querySelector("#tradeRadius").value||"2")+'" aria-label="スマホ商圏半径km"><button id="mobileDrawTrade" type="button">商圏を描画</button></div>'+
+        mobileShareHtml()+
         '<div class="mobile-sheet-actions"><button id="mobileExportTrade" type="button">CSV出力</button><button id="mobileExportReport" type="button">PDF出力</button><button id="mobileAddTradeCompare" type="button">比較に追加</button><button id="mobileOpenAnalysis" type="button">分析を見る</button></div>'+
         '<div class="trade-scope">'+escapeHtml(document.querySelector("#tradeScopeStatus")?.textContent||"商圏を描画すると集計します。")+'</div>';
     }
@@ -1119,6 +1161,18 @@
     }
     function bindMobileSheetActions(){
       document.querySelector("#mobileDrawTrade")?.addEventListener("click",()=>{document.querySelector("#tradeRadius").value=document.querySelector("#mobileTradeRadius").value;updateRadiusChips();drawTradeArea()});
+      ["mobileOwnClientCount","mobileVisitNursingUseRate","mobileTargetShareRate"].forEach(id=>document.querySelector("#"+id)?.addEventListener("change",()=>{
+        const own=document.querySelector("#mobileOwnClientCount");
+        const rate=document.querySelector("#mobileVisitNursingUseRate");
+        const target=document.querySelector("#mobileTargetShareRate");
+        state.ownClientCount=own&&own.value!==""?Math.max(0,Number(own.value)||0):null;
+        if(rate)state.visitNursingUseRate=Math.max(0,Number(rate.value)||0);
+        if(target)state.targetShareRate=Math.max(0,Number(target.value)||0);
+        applyShareInputsToDom();
+        renderSharePanel();
+        renderTradeChips();
+        renderMobileSheet();
+      }));
       document.querySelector("#mobileExportTrade")?.addEventListener("click",exportTradeCsv);
       document.querySelector("#mobileExportReport")?.addEventListener("click",exportTradeReportPdf);
       document.querySelector("#mobileAddTradeCompare")?.addEventListener("click",addTradeCompare);
@@ -1168,20 +1222,77 @@
       });
       return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),elderlySingleHouseholds:Math.round(elderlySingleHouseholds),elderlyCoupleHouseholds:Math.round(elderlyCoupleHouseholds),areaKm2,habitableAreaKm2,populationDensity:areaKm2?Math.round(population/areaKm2):0,elderly75Density:areaKm2?Math.round(elderly75/areaKm2):0,habitableElderly75Density:habitableAreaKm2?Math.round(elderly75/habitableAreaKm2):0,careNeed:Math.round(elderly75*0.32),matched,cities:Object.keys(byCity).length};
     }
+    function pct(value,digits=1){return Number.isFinite(value)?value.toFixed(digits)+"%":"-"}
+    function syncShareInputs(){
+      const own=document.querySelector("#ownClientCount");
+      const rate=document.querySelector("#visitNursingUseRate");
+      const target=document.querySelector("#targetShareRate");
+      if(own)state.ownClientCount=own.value===""?null:Math.max(0,Number(own.value)||0);
+      if(rate)state.visitNursingUseRate=Math.max(0,Number(rate.value)||0);
+      if(target)state.targetShareRate=Math.max(0,Number(target.value)||0);
+    }
+    function applyShareInputsToDom(){
+      const own=document.querySelector("#ownClientCount");
+      const rate=document.querySelector("#visitNursingUseRate");
+      const target=document.querySelector("#targetShareRate");
+      if(own)own.value=state.ownClientCount===null?"":state.ownClientCount;
+      if(rate)rate.value=state.visitNursingUseRate;
+      if(target)target.value=state.targetShareRate;
+    }
+    function calculateShareEstimate(est){
+      const elderly75=Number(est?.elderly75||0);
+      const useRate=Number(state.visitNursingUseRate||0);
+      const targetRate=Number(state.targetShareRate||0);
+      const own=state.ownClientCount===null?null:Number(state.ownClientCount||0);
+      const estimatedUsers=Math.max(0,Math.round(elderly75*useRate/100));
+      const ownShare=own===null||!estimatedUsers?null:own/estimatedUsers*100;
+      const targetUsers=Math.round(estimatedUsers*targetRate/100);
+      const targetGap=own===null?null:Math.max(0,targetUsers-own);
+      const remaining=own===null?estimatedUsers:Math.max(0,estimatedUsers-own);
+      return {elderly75,useRate,targetRate,own,estimatedUsers,ownShare,targetUsers,targetGap,remaining};
+    }
+    function shareNarrative(share){
+      if(!share.estimatedUsers)return "商圏内75歳以上人口または利用率が不足しているため、推定利用者数を算出できません。";
+      if(share.own===null)return "自施設利用者数を入力すると、現在シェアと目標までの追加利用者数を試算できます。";
+      if(share.ownShare>=share.targetRate)return "目標シェアを上回っています。新規獲得だけでなく、既存利用者の維持と紹介元深耕を優先してください。";
+      if(share.ownShare>=share.targetRate*.7)return "目標に近い水準です。紹介元の上位候補へ集中営業すると、目標達成が現実的です。";
+      if(share.ownShare<10)return "現シェアは低めです。商圏内需要に対して営業余地が大きく、居宅・医療連携先の開拓優先度が高いです。";
+      return "一定のシェアはありますが、まだ獲得余地があります。競合密度と紹介元候補を見ながら重点先を絞ってください。";
+    }
+    function renderSharePanel(){
+      syncShareInputs();
+      const summary=document.querySelector("#shareSummary");
+      const comment=document.querySelector("#shareComment");
+      if(!summary||!comment)return null;
+      if(!state.selected||!state.tradeRows.length){
+        summary.innerHTML='<div class="analysis-card"><b>-</b>推定訪問看護利用者</div><div class="analysis-card"><b>-</b>自施設シェア</div>';
+        comment.textContent="商圏を描画し、自施設利用者数を入力するとシェアを試算します。";
+        return null;
+      }
+      const share=calculateShareEstimate(estimateTradePopulation(state.tradeRows));
+      summary.innerHTML=
+        '<div class="analysis-card"><b>'+yen(share.estimatedUsers)+'人</b>推定訪問看護利用者</div>'+
+        '<div class="analysis-card"><b>'+(share.own===null?"未入力":yen(share.own)+"人")+'</b>自施設利用者</div>'+
+        '<div class="analysis-card"><b>'+pct(share.ownShare)+'</b>自施設シェア</div>'+
+        '<div class="analysis-card"><b>'+(share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"): "達成"))+'</b>目標'+pct(share.targetRate,0)+'まで</div>'+
+        '<div class="analysis-card"><b>'+yen(share.remaining)+'人</b>残り市場余地</div>'+
+        '<div class="analysis-card"><b>'+pct(share.useRate,1)+'</b>訪問看護利用率 仮定</div>';
+      comment.textContent=shareNarrative(share);
+      return share;
+    }
     function renderTradeChips(){
       const root=document.querySelector("#tradeChipStack");
       if(!root)return;
       if(!state.tradeChipVisible||!state.selected||!state.tradeRows.length){root.classList.remove("show");root.innerHTML="";return}
       const radius=Number(document.querySelector("#tradeRadius").value||0);
-      const counts=tradeCounts();
       const est=estimateTradePopulation(state.tradeRows)||{};
+      const share=calculateShareEstimate(est);
       const chips=[
-        ["半径",radius+"km"],
-        ["施設",yen(state.tradeRows.length)],
-        ["75歳以上",yen(est.elderly75||0)+"人"],
-        ["訪問看護",yen(counts["訪問看護"]||0)],
-        ["居宅",yen(counts["居宅介護支援"]||0)],
-        ["医療連携",yen((counts["病院"]||0)+(counts["訪問診療対応診療所"]||0))]
+        ["推定利用者",yen(share.estimatedUsers)+"人"],
+        ["自施設",share.own===null?"未入力":yen(share.own)+"人"],
+        ["シェア",pct(share.ownShare)],
+        ["目標差分",share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"):"達成")],
+        ["半径",radius+"km"]
       ];
       root.innerHTML='<div class="trade-chip-card"><div class="trade-chip-head"><div class="trade-chip-title">'+escapeHtml(state.selected.name)+'<br><small>'+escapeHtml(tradePrefNames())+'</small></div><button id="hideTradeChip" class="trade-chip-close" type="button" aria-label="商圏チップを閉じる">×</button></div><div class="trade-chip-list">'+chips.map(([k,v])=>'<span class="trade-chip">'+escapeHtml(k)+' <b>'+escapeHtml(v)+'</b></span>').join("")+'</div></div>';
       root.classList.add("show");
@@ -1243,9 +1354,12 @@
       const context=document.querySelector("#analysisContext");
       if(!state.selected||!rows.length){
         context.textContent="地図タブで施設を選択し、商圏を描画してください。";
+        document.querySelector("#tradeInsight").innerHTML="";
         document.querySelector("#analysisSummary").innerHTML="";
+        document.querySelector("#scoreBreakdown").innerHTML="";
         document.querySelector("#prioritySummary").innerHTML="";
         document.querySelector("#serviceSummary").innerHTML="";
+        renderSharePanel();
         return;
       }
       context.innerHTML='<b>'+state.selected.name+'</b>'+state.selected.serviceLabel+' / '+(state.selected.city||"-")+' / 半径 '+radius+'km';
@@ -1257,16 +1371,12 @@
       const care=counts["居宅介護支援"]||0;
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
-      const elderlyPerNursing=nursing?Math.round(est.elderly/nursing):"-";
-      const estimateUnit=est.source==="500mメッシュ"?"500mメッシュ集計":"市区町村按分";
+      renderSharePanel();
       document.querySelector("#analysisSummary").innerHTML=
         '<div class="analysis-card"><b><span class="score-badge">'+score.grade+'</span> '+score.overall+'</b>商圏総合スコア</div>'+
-        '<div class="analysis-card"><b>'+yen(rows.length)+'</b>商圏内施設数</div>'+
-        '<div class="analysis-card"><b>'+yen(est.elderly)+'</b>推計65歳以上人口</div>'+
         '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>推計75歳以上人口</div>'+
-        '<div class="analysis-card"><b>'+elderlyPerNursing+'</b>65歳以上/訪問看護</div>'+
-        '<div class="analysis-card"><b>'+yen(est.population)+'</b>推計総人口</div>'+
-        '<div class="analysis-card"><b>'+yen(est.matched)+'</b>'+estimateUnit+'</div>';
+        '<div class="analysis-card"><b>'+yen(nursing)+'</b>訪問看護</div>'+
+        '<div class="analysis-card"><b>'+yen(targetRows().length)+'</b>営業候補</div>';
       document.querySelector("#tradeInsight").innerHTML=
         '<div class="insight-card"><strong>営業・企画判断: '+narrative.headline+'</strong>'+
         '<div>'+narrative.action+'</div>'+
@@ -1356,6 +1466,7 @@
       const radius=Number(document.querySelector("#tradeRadius").value||0);
       const rows=state.tradeRows||[];
       const est=estimateTradePopulation(rows);
+      const share=calculateShareEstimate(est);
       const counts=tradeCounts();
       const score=tradeScore(est,counts);
       const narrative=tradeNarrative(score,est);
@@ -1373,7 +1484,7 @@
         ["競合余地",score.competition],
         ["アクセス暫定",score.access]
       ];
-      const sourceNote='人口・高齢者人口は500mメッシュまたは市区町村按分による推計です。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
+      const sourceNote='人口・高齢者人口、推定訪問看護利用者数、自施設シェアは推計です。推定訪問看護利用者数は商圏内75歳以上人口×訪問看護利用率で算出しています。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
       const html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>商圏分析レポート</title>'+
         '<style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#17202a;font-family:"Yu Gothic","Meiryo",system-ui,sans-serif;font-size:12px;line-height:1.55}h1{font-size:22px;margin:0 0 6px}h2{font-size:14px;margin:18px 0 8px;border-bottom:1px solid #d9e0ea;padding-bottom:4px}.sub{color:#667085}.head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;border-bottom:3px solid #0b57d0;padding-bottom:10px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900;padding:4px 10px}.decision{border:1px solid #d9e0ea;border-left:5px solid #0b57d0;border-radius:8px;padding:10px;margin:12px 0}.decision strong{font-size:16px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.report-metric{border:1px solid #d9e0ea;border-radius:8px;padding:8px;background:#f8fafc;min-height:54px}.report-metric b{display:block;font-size:17px;line-height:1.1}.report-metric span{display:block;color:#667085;font-size:10px;margin-top:4px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score-line{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center}.meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:#0b57d0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #edf1f7;padding:6px 4px;text-align:left;vertical-align:top}th{font-size:10px;color:#344054;background:#f8fafc}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.note{font-size:10px;color:#667085;margin-top:14px}.pagebreak{break-before:page}@media print{button{display:none}}</style></head><body>'+
         '<div class="head"><div><h1>商圏分析レポート</h1><div class="sub">集計対象: '+escapeHtml(tradePrefNames())+' / '+escapeHtml(state.selected.city||"-")+' / 半径 '+escapeHtml(radius)+'km</div></div><div class="sub">作成: '+escapeHtml(createdAt)+'</div></div>'+
@@ -1394,6 +1505,12 @@
         reportMetric("75歳以上/訪問看護",nursing?yen(Math.round(est.elderly75/nursing)):"-","人/施設")+
         reportMetric("集計単位",yen(est.matched),est.source==="500mメッシュ"?"メッシュ":"市区町村")+
         '</div>'+
+        '<h2>自施設シェア試算</h2><div class="metrics">'+
+        reportMetric("推定訪問看護利用者",yen(share.estimatedUsers),"人")+
+        reportMetric("自施設利用者",share.own===null?"未入力":yen(share.own),share.own===null?"":"人")+
+        reportMetric("自施設シェア",pct(share.ownShare),"")+
+        reportMetric("目標"+pct(share.targetRate,0)+"まで",share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)):"達成"),share.targetGap?"人":"")+
+        '</div><div class="decision"><strong>シェア判断</strong><br>'+escapeHtml(shareNarrative(share))+'</div>'+
         '<h2>スコア内訳</h2><div class="scores">'+scoreRows.map(([label,value])=>'<div class="score-line"><span>'+escapeHtml(label)+'</span><div class="meter"><i style="width:'+value+'%"></i></div><b>'+value+'</b></div>').join("")+'</div>'+
         '<h2>主要カテゴリ</h2><div class="metrics">'+
         reportMetric("居宅介護支援",yen(care),"施設")+
@@ -1508,6 +1625,7 @@
     map.on("moveend zoomend",scheduleRenderStations);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
+    ["ownClientCount","visitNursingUseRate","targetShareRate"].forEach(id=>document.querySelector("#"+id).addEventListener("input",()=>{renderSharePanel();renderTradeChips();renderMobileSheet()}));
     document.querySelectorAll("#radiusChips button").forEach(button=>button.addEventListener("click",()=>{
       document.querySelector("#tradeRadius").value=button.dataset.radius;
       updateRadiusChips();
