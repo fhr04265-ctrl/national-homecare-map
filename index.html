@@ -48,6 +48,15 @@
     .mode-button.active span{color:#345f9f}
     .mode-status{border:1px solid #d9e0ea;border-radius:8px;background:#fff;padding:8px;font-size:11px;color:#667085;line-height:1.45}
     .mobile-mode-bar,.mobile-action-bar,.mobile-sheet{display:none}
+    .trade-chip-stack{position:fixed;top:14px;right:14px;z-index:880;display:none;max-width:min(520px,calc(100vw - 430px));pointer-events:none}
+    .trade-chip-stack.show{display:block}
+    .trade-chip-card{pointer-events:auto;border:1px solid rgba(16,24,40,.12);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 10px 28px rgba(16,24,40,.18);padding:10px 12px}
+    .trade-chip-head{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:start;margin-bottom:8px}
+    .trade-chip-title{font-size:13px;font-weight:900;line-height:1.35}
+    .trade-chip-close{width:28px;min-height:28px;border-radius:50%;padding:0;font-size:16px;line-height:1}
+    .trade-chip-list{display:flex;flex-wrap:wrap;gap:6px}
+    .trade-chip{display:inline-flex;align-items:baseline;gap:4px;border:1px solid #d9e0ea;border-radius:999px;background:#f8fafc;padding:5px 8px;font-size:11px;color:#667085}
+    .trade-chip b{font-size:14px;color:#17202a}
     .preset-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
     .trade-scope{margin-top:8px;border:1px solid #d9e0ea;border-radius:8px;background:#fff;padding:8px;font-size:11px;color:#667085;line-height:1.45}
     .station-label{pointer-events:none}
@@ -106,7 +115,7 @@
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
+    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.trade-chip-stack{top:52px;right:8px;left:8px;max-width:none}.trade-chip-card{padding:9px 10px}.trade-chip-title{font-size:12px}.trade-chip{font-size:10px;padding:4px 7px}.trade-chip b{font-size:13px}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -324,6 +333,7 @@
     </aside>
     <div id="map"></div>
   </div>
+  <div id="tradeChipStack" class="trade-chip-stack" aria-live="polite"></div>
   <div id="mobileModeBar" class="mobile-mode-bar" aria-label="分析モード"></div>
   <div class="mobile-action-bar" aria-label="スマホ主要操作">
     <button id="mobileOpenArea" type="button">地域</button>
@@ -347,10 +357,10 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260620-mode-mobile-ux"></script>
+  <script src="national_homecare_data/manifest.js?v=20260620-trade-chip-mesh-detail"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const mapModes = {
       sales:{label:"営業先探索",short:"営業",desc:"居宅・医療連携先・訪問看護を中心に、営業先候補を探します。",groups:["居宅介護支援","病院","訪問診療対応診療所","訪問看護"],market:"meshElderly75PerVisitNursing",stations:false,names:false,catchment:false},
@@ -361,6 +371,10 @@
     const map = L.map("map",{preferCanvas:true}).setView([36.2,138.2],5);
     map.createPane("comparePane");
     map.getPane("comparePane").style.zIndex = 360;
+    map.createPane("marketPane");
+    map.getPane("marketPane").style.zIndex = 430;
+    map.createPane("tradePane");
+    map.getPane("tradePane").style.zIndex = 520;
     map.createPane("stationCatchmentPane");
     map.getPane("stationCatchmentPane").style.zIndex = 370;
     map.createPane("stationPane");
@@ -747,8 +761,8 @@
       const density=r.d20||0;
       const elderlyDensity=r.d75_25||0;
       const valueText=(key==="meshDensity2020"||key==="meshElderly75Density2025")?densityUnit(value):(isPopulationValueKey(key)?unit(Math.round(value),"人"):unit(Math.round(value),"施設"));
-      const supplyText='<br><b>周辺2km</b><br>75歳以上: '+unit(s.e752||0,"人")+' / 訪問看護: '+unit(s.vn2||0,"施設")+'<br>居宅介護支援: '+unit(s.cm2||0,"施設")+' / 医療連携先: '+unit(s.mp2||0,"施設")+'<br><b>同一500m</b><br>訪問看護: '+unit(s.vn||0,"施設")+' / 居宅介護支援: '+unit(s.cm||0,"施設")+'<br>病院: '+unit(s.hp||0,"施設")+' / 訪問診療対応診療所: '+unit(s.hc||0,"施設");
-      return '<b>メッシュ人口・高齢者情報</b><br>メッシュID: '+r.id+'<br>'+label+': '+valueText+'<br>夜間人口2020: '+unit(r.p20,"人")+'<br>75歳以上2025推計: '+unit(r.e75_25,"人")+'<br>人口密度2020: '+densityUnit(density)+'<br>75歳以上密度2025: '+densityUnit(elderlyDensity)+'<br>面積: '+(Number(r.a||0).toFixed(2))+' km²'+supplyText+'<br>'+(r.city||"");
+      const supplyText='<hr style="border:0;border-top:1px solid #edf1f7;margin:7px 0"><b>周辺2kmの供給・連携先</b><br>75歳以上: '+unit(s.e752||0,"人")+' / 訪問看護: '+unit(s.vn2||0,"施設")+'<br>居宅介護支援: '+unit(s.cm2||0,"施設")+' / 医療連携先: '+unit(s.mp2||0,"施設")+'<br><b>同一500m内</b><br>訪問看護: '+unit(s.vn||0,"施設")+' / 居宅介護支援: '+unit(s.cm||0,"施設")+'<br>病院: '+unit(s.hp||0,"施設")+' / 訪問診療対応診療所: '+unit(s.hc||0,"施設");
+      return '<div class="popup"><span class="tag">500mメッシュ</span><h3>メッシュ詳細</h3><p><b>市区町村:</b> '+escapeHtml(r.city||"-")+'</p><p><b>メッシュID:</b> '+escapeHtml(r.id)+'</p><p><b>'+escapeHtml(label)+':</b> '+valueText+'</p><p><b>夜間人口2020:</b> '+unit(r.p20,"人")+'</p><p><b>65歳以上2025推計:</b> '+unit(r.e65_25||0,"人")+'</p><p><b>75歳以上2025推計:</b> '+unit(r.e75_25,"人")+'</p><p><b>人口密度2020:</b> '+densityUnit(density)+'</p><p><b>75歳以上密度2025:</b> '+densityUnit(elderlyDensity)+'</p><p><b>面積:</b> '+(Number(r.a||0).toFixed(2))+' km²</p>'+supplyText+'</div>';
     }
     function meshRowsInScope(){
       const radius=Number(document.querySelector("#tradeRadius")?.value||0);
@@ -988,8 +1002,10 @@
         const value=meshValue(r,key);
         const rate=marketRateForValue(key,value,max);
         const color=marketColorForValue(key,value,rate);
-        L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{stroke:false,fillColor:color,fillOpacity:marketOpacityForValue(key,rate)})
-          .bindPopup(meshPopupHtml(r,key,label,Math.round(value)))
+        const rect=L.rectangle([[r.b[0],r.b[1]],[r.b[2],r.b[3]]],{pane:"marketPane",interactive:true,bubblingMouseEvents:false,stroke:true,color:"#ffffff",weight:.35,opacity:.22,fillColor:color,fillOpacity:marketOpacityForValue(key,rate)})
+          .bindPopup(meshPopupHtml(r,key,label,Math.round(value)),{maxWidth:320});
+        rect.on("click",e=>{if(e.originalEvent)L.DomEvent.stop(e.originalEvent);rect.openPopup(e.latlng)});
+        rect
           .addTo(marketLayer);
       });
     }
@@ -1151,6 +1167,25 @@
         matched++;
       });
       return {population:Math.round(population),elderly:Math.round(elderly),elderly75:Math.round(elderly75),elderlySingleHouseholds:Math.round(elderlySingleHouseholds),elderlyCoupleHouseholds:Math.round(elderlyCoupleHouseholds),areaKm2,habitableAreaKm2,populationDensity:areaKm2?Math.round(population/areaKm2):0,elderly75Density:areaKm2?Math.round(elderly75/areaKm2):0,habitableElderly75Density:habitableAreaKm2?Math.round(elderly75/habitableAreaKm2):0,careNeed:Math.round(elderly75*0.32),matched,cities:Object.keys(byCity).length};
+    }
+    function renderTradeChips(){
+      const root=document.querySelector("#tradeChipStack");
+      if(!root)return;
+      if(!state.tradeChipVisible||!state.selected||!state.tradeRows.length){root.classList.remove("show");root.innerHTML="";return}
+      const radius=Number(document.querySelector("#tradeRadius").value||0);
+      const counts=tradeCounts();
+      const est=estimateTradePopulation(state.tradeRows)||{};
+      const chips=[
+        ["半径",radius+"km"],
+        ["施設",yen(state.tradeRows.length)],
+        ["75歳以上",yen(est.elderly75||0)+"人"],
+        ["訪問看護",yen(counts["訪問看護"]||0)],
+        ["居宅",yen(counts["居宅介護支援"]||0)],
+        ["医療連携",yen((counts["病院"]||0)+(counts["訪問診療対応診療所"]||0))]
+      ];
+      root.innerHTML='<div class="trade-chip-card"><div class="trade-chip-head"><div class="trade-chip-title">'+escapeHtml(state.selected.name)+'<br><small>'+escapeHtml(tradePrefNames())+'</small></div><button id="hideTradeChip" class="trade-chip-close" type="button" aria-label="商圏チップを閉じる">×</button></div><div class="trade-chip-list">'+chips.map(([k,v])=>'<span class="trade-chip">'+escapeHtml(k)+' <b>'+escapeHtml(v)+'</b></span>').join("")+'</div></div>';
+      root.classList.add("show");
+      document.querySelector("#hideTradeChip")?.addEventListener("click",()=>{state.tradeChipVisible=false;renderTradeChips()});
     }
     function tradeCounts(){
       return (state.tradeRows||[]).reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
@@ -1401,11 +1436,13 @@
       state.tradeRows=tradeFacilities();
       state.meshTradeEstimate=null;
       state.meshTradeEstimate=aggregateMeshPopulation();
-      L.circle([state.selected.lat,state.selected.lng],{radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.75,weight:2,interactive:false}).addTo(tradeLayer);
+      state.tradeChipVisible=true;
+      L.circle([state.selected.lat,state.selected.lng],{pane:"tradePane",radius:radius*1000,color:"#d92d20",fillColor:"#d92d20",fillOpacity:.08,opacity:.9,weight:2,interactive:false}).addTo(tradeLayer);
       document.querySelector("#tradeResult").innerHTML='<div><b>'+yen(state.tradeRows.length)+'</b>円内施設数</div><div><b>'+tradePrefNames()+'</b>抽出対象</div>';
       renderAnalysis();
       if(isMeshVariable(document.querySelector("#marketVariable").value)) renderMarketLayer();
       renderMobileSheet();
+      renderTradeChips();
     }
     function csvCell(v){return '"'+String(v??"").replace(/"/g,'""')+'"'}
     function exportTradeCsv(){
@@ -1428,7 +1465,7 @@
       const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="sales_targets_"+tradePrefNames().replace(/[ /]/g,"_")+"_"+document.querySelector("#tradeRadius").value+"km.csv";a.click();URL.revokeObjectURL(a.href);
     }
     document.querySelector("#pref").addEventListener("change",async e=>{
-      state.pref=e.target.value; state.city="すべて"; state.selected=null; document.querySelector("#citySearch").value=""; state.compareAreas=[]; state.tradePrefCodes=[]; tradeLayer.clearLayers(); compareLayer.clearLayers();
+      state.pref=e.target.value; state.city="すべて"; state.selected=null; document.querySelector("#citySearch").value=""; state.compareAreas=[]; state.tradePrefCodes=[]; state.tradeChipVisible=false; tradeLayer.clearLayers(); compareLayer.clearLayers(); renderTradeChips();
       state.meshData=null; state.meshSupplyData=null; state.meshSupplyMap=null; state.meshTradeEstimate=null;
       document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";
       if(!state.pref){state.data=null;renderCities();renderFacilities();renderMarketLayer();scheduleRenderStations();return}
@@ -1479,7 +1516,7 @@
     document.querySelector("#exportTrade").addEventListener("click",exportTradeCsv);
     document.querySelector("#exportTradeReport").addEventListener("click",exportTradeReportPdf);
     document.querySelector("#exportAnalysisReport").addEventListener("click",exportTradeReportPdf);
-    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.tradePrefCodes=[];state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";renderAnalysis();renderMarketLayer();renderMobileSheet()});
+    document.querySelector("#clearTrade").addEventListener("click",()=>{state.selected=null;state.tradeRows=[];state.tradePrefCodes=[];state.tradeChipVisible=false;state.meshTradeEstimate=null;tradeLayer.clearLayers();renderSelected(false);renderTradeChips();document.querySelector("#tradeResult").innerHTML='<div><b>-</b>円内施設数</div><div><b>-</b>読み込み単位</div>';document.querySelector("#tradeScopeStatus").textContent="商圏を描画すると、県境をまたぐ場合は必要な都道府県を追加で読み込みます。";renderAnalysis();renderMarketLayer();renderMobileSheet()});
     document.querySelector("#mapTabButton").addEventListener("click",()=>switchTab("map"));
     document.querySelector("#analysisTabButton").addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
     document.querySelector("#compareTabButton").addEventListener("click",()=>{renderCompare();switchTab("compare")});
@@ -1544,7 +1581,7 @@
       if(marker) marker.openPopup();
       else L.popup().setLatLng([f.lat,f.lng]).setContent(popup(f)).openOn(map);
     }
-    fillPref(); fillLayers(); fillModes(); renderFacilities(); renderCompareMiniPanel(); renderMobileSheet();
+    fillPref(); fillLayers(); fillModes(); renderFacilities(); renderCompareMiniPanel(); renderMobileSheet(); renderTradeChips();
   </script>
 </body>
 </html>
