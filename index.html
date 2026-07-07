@@ -85,12 +85,24 @@
     .score-badge{display:inline-flex;align-items:center;justify-content:center;min-width:38px;padding:3px 8px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900}
     .insight-card{border:1px solid var(--line);border-left:5px solid var(--blue);border-radius:8px;background:#fff;padding:12px;font-size:12px;line-height:1.6;margin-bottom:8px}
     .insight-card strong{display:block;font-size:18px;line-height:1.25;color:var(--ink);margin-bottom:4px}
+    .executive-card{border:1px solid var(--line);border-left:6px solid var(--blue);border-radius:8px;background:#fff;padding:12px;display:grid;gap:10px;margin-bottom:10px}
+    .executive-card.grade-a{border-left-color:#0f8a4b}
+    .executive-card.grade-b{border-left-color:#0b57d0}
+    .executive-card.grade-c{border-left-color:#b7791f}
+    .executive-card.grade-d{border-left-color:#c2410c}
+    .executive-head{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:start}
+    .executive-title{font-size:18px;font-weight:900;line-height:1.25;color:var(--ink)}
+    .executive-copy{font-size:12px;line-height:1.55;color:#344054}
+    .executive-tags{display:flex;flex-wrap:wrap;gap:6px}
+    .executive-tag{display:inline-flex;align-items:center;gap:4px;border:1px solid #d9e0ea;border-radius:999px;background:#f8fafc;padding:4px 8px;font-size:11px;font-weight:800;color:#344054}
+    .executive-actions{display:grid;gap:5px;border-top:1px solid #edf1f7;padding-top:9px;font-size:12px;line-height:1.55}
+    .executive-actions b{color:var(--ink)}
     .score-bars{display:grid;gap:7px;margin-top:8px}
     .score-line{display:grid;grid-template-columns:72px 1fr 42px;gap:8px;align-items:center;font-size:12px}
     .meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}
     .meter i{display:block;height:100%;background:var(--blue)}
     .share-panel{display:grid;gap:9px;border:1px solid #c7d7fe;border-radius:8px;background:#f8fbff;padding:10px;margin-top:10px}
-    .share-inputs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .share-inputs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
     .share-inputs label{display:grid;gap:4px;font-size:11px;font-weight:800;color:#344054}
     .share-inputs input{background:#fff}
     .share-note{font-size:11px;color:#667085;line-height:1.55}
@@ -102,6 +114,9 @@
     .analysis-details summary:after{content:"開く";float:right;color:var(--blue);font-size:11px}
     .analysis-details[open] summary:after{content:"閉じる"}
     .analysis-details .analysis-grid,.analysis-details .score-bars,.analysis-details .analysis-list{margin-top:10px}
+    .trade-chip-decision{font-size:12px;line-height:1.45;color:#344054;margin:7px 0 8px}
+    .trade-chip-actions{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+    .trade-chip-actions button{min-height:32px;font-size:11px;padding:5px 7px}
     .city-summary{display:grid;gap:6px}
     .city-row{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px solid #edf1f7;padding:7px 0;font-size:12px}
     .city-row b{font-size:13px}
@@ -128,7 +143,7 @@
     .popup h3{font-size:15px;margin:0 0 6px}
     .popup p{margin:3px 0;font-size:12px}
     .tag{display:inline-flex;padding:2px 7px;border-radius:999px;background:#eef4ff;color:#164db3;font-size:11px;font-weight:800;margin-bottom:6px}
-    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics,.share-inputs{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.trade-chip-stack{top:52px;right:8px;left:8px;max-width:none}.trade-chip-card{padding:9px 10px}.trade-chip-title{font-size:12px}.trade-chip{font-size:10px;padding:4px 7px}.trade-chip b{font-size:13px}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
+    @media (max-width:900px){body{padding-bottom:128px}.app{grid-template-columns:1fr;height:auto}aside{border-right:0;overflow:visible}header{padding:14px 16px}.tabs{display:none}#map{order:-1;height:60vh;min-height:390px}.panel{padding:12px 14px}.checks{max-height:220px}.analysis-grid,.stats,.trade-result,.compare-metrics,.share-inputs{grid-template-columns:1fr 1fr}.lead-table{font-size:11px}.quick-guide{font-size:11px}.mode-grid{grid-template-columns:1fr 1fr}.executive-head{grid-template-columns:1fr}.executive-title{font-size:16px}.trade-chip-stack{top:52px;right:8px;left:8px;max-width:none}.trade-chip-card{padding:9px 10px}.trade-chip-title{font-size:12px}.trade-chip{font-size:10px;padding:4px 7px}.trade-chip b{font-size:13px}.mobile-mode-bar{position:fixed;top:0;left:54px;right:0;z-index:890;display:flex;gap:8px;overflow:auto;padding:8px 10px;background:rgba(255,255,255,.96);border:1px solid rgba(16,24,40,.1);border-top:0;border-right:0;border-radius:0 0 0 12px;box-shadow:0 6px 18px rgba(16,24,40,.12);-webkit-overflow-scrolling:touch}.mobile-mode-bar button{white-space:nowrap;min-height:34px;font-size:12px;padding:5px 10px}.mobile-mode-bar button.active{background:var(--blue);border-color:var(--blue);color:#fff}.mobile-action-bar{position:fixed;left:10px;right:10px;bottom:66px;z-index:910;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;padding:8px;border:1px solid rgba(16,24,40,.1);border-radius:12px;background:rgba(255,255,255,.96);box-shadow:0 8px 24px rgba(16,24,40,.18)}.mobile-action-bar button{min-height:38px;font-size:12px;padding:6px 4px}.mobile-sheet{position:fixed;left:0;right:0;bottom:0;z-index:940;display:block;max-height:76vh;transform:translateY(101%);transition:transform .18s ease;background:#fff;border-radius:16px 16px 0 0;box-shadow:0 -12px 32px rgba(16,24,40,.22);overflow:auto}.mobile-sheet.open{transform:translateY(0)}.mobile-sheet-head{position:sticky;top:0;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);background:#fff;border-radius:16px 16px 0 0}.mobile-sheet-head b{font-size:14px}.mobile-sheet-body{padding:12px 14px;display:grid;gap:10px}.mobile-sheet-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.mobile-nav{position:fixed;left:0;right:0;bottom:0;z-index:900;display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:#d9e0ea;border-top:1px solid var(--line)}.mobile-nav button{border:0;border-radius:0;background:#fff;min-height:56px;font-size:11px;padding:6px 2px}.mobile-nav button.active{background:#eef4ff;color:var(--blue)}}
   </style>
 </head>
 <body>
@@ -282,6 +297,7 @@
               <label>自施設利用者数<input id="ownClientCount" type="number" min="0" step="1" placeholder="例: 38"></label>
               <label>訪問看護利用率<input id="visitNursingUseRate" type="number" min="0" max="100" step="0.1" value="12"></label>
               <label>目標シェア率<input id="targetShareRate" type="number" min="0" max="100" step="1" value="30"></label>
+              <label>達成期間（月）<input id="targetMonths" type="number" min="1" max="60" step="1" value="12"></label>
             </div>
             <div id="shareSummary" class="analysis-grid"></div>
             <div id="shareComment" class="share-comment">商圏を描画し、自施設利用者数を入力するとシェアを試算します。</div>
@@ -390,10 +406,10 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260620-share-estimate"></script>
+  <script src="national_homecare_data/manifest.js?v=20260707-executive-summary"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, ownClientCount:null, visitNursingUseRate:12, targetShareRate:30, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, ownClientCount:null, visitNursingUseRate:12, targetShareRate:30, targetMonths:12, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const mapModes = {
       sales:{label:"営業先探索",short:"営業",desc:"居宅・医療連携先・訪問看護を中心に、営業先候補を探します。",groups:["居宅介護支援","病院","訪問診療対応診療所","訪問看護"],market:"meshElderly75PerVisitNursing",stations:false,names:false,catchment:false},
@@ -1113,15 +1129,24 @@
       if(!state.tradeRows.length)return '<div class="share-note">商圏を描画すると、推定利用者数と自施設シェアを表示します。</div>';
       const share=calculateShareEstimate(estimateTradePopulation(state.tradeRows));
       return '<div class="share-panel"><div class="label">自施設シェア試算</div>'+
-        '<div class="share-inputs"><label>自施設利用者数<input id="mobileOwnClientCount" type="number" min="0" step="1" value="'+escapeHtml(share.own===null?"":share.own)+'" placeholder="例: 38"></label><label>利用率<input id="mobileVisitNursingUseRate" type="number" min="0" max="100" step="0.1" value="'+escapeHtml(share.useRate)+'"></label><label>目標シェア<input id="mobileTargetShareRate" type="number" min="0" max="100" step="1" value="'+escapeHtml(share.targetRate)+'"></label></div>'+
-        '<div class="analysis-grid"><div class="analysis-card"><b>'+yen(share.estimatedUsers)+'人</b>推定利用者</div><div class="analysis-card"><b>'+pct(share.ownShare)+'</b>自施設シェア</div><div class="analysis-card"><b>'+(share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"):"達成"))+'</b>目標まで</div><div class="analysis-card"><b>'+yen(share.remaining)+'人</b>残り余地</div></div>'+
+        '<div class="share-inputs"><label>自施設利用者数<input id="mobileOwnClientCount" type="number" min="0" step="1" value="'+escapeHtml(share.own===null?"":share.own)+'" placeholder="例: 38"></label><label>利用率<input id="mobileVisitNursingUseRate" type="number" min="0" max="100" step="0.1" value="'+escapeHtml(share.useRate)+'"></label><label>目標シェア<input id="mobileTargetShareRate" type="number" min="0" max="100" step="1" value="'+escapeHtml(share.targetRate)+'"></label><label>期間（月）<input id="mobileTargetMonths" type="number" min="1" max="60" step="1" value="'+escapeHtml(share.targetMonths)+'"></label></div>'+
+        '<div class="analysis-grid"><div class="analysis-card"><b>'+yen(share.estimatedUsers)+'人</b>推定利用者</div><div class="analysis-card"><b>'+pct(share.ownShare)+'</b>自施設シェア</div><div class="analysis-card"><b>'+(share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"):"達成"))+'</b>目標まで</div><div class="analysis-card"><b>'+(share.monthlyGap===null?"-":(share.monthlyGap?yen(share.monthlyGap)+"人/月":"達成"))+'</b>月間獲得目安</div></div>'+
         '<div class="share-comment">'+escapeHtml(shareNarrative(share))+'</div></div>';
+    }
+    function mobileExecutiveHtml(){
+      if(!state.tradeRows.length)return "";
+      const est=estimateTradePopulation(state.tradeRows);
+      const counts=tradeCounts();
+      const score=tradeScore(est,counts);
+      const share=calculateShareEstimate(est);
+      return renderExecutiveCard(buildTradeExecutiveSummary(est,counts,score,tradeNarrative(score,est),share,document.querySelector("#tradeRadius").value||"-"));
     }
     function mobileSelectedHtml(){
       if(!state.selected)return '<div class="selected">地図上の施設をタップすると、ここに施設詳細と商圏操作が表示されます。</div>';
       const f=state.selected;
       return '<div class="selected"><b>'+escapeHtml(f.name)+'</b><br>'+escapeHtml(f.serviceLabel)+' / '+escapeHtml(f.city||"-")+'<br>'+escapeHtml(f.address||"")+'<br>'+(f.phone?'<b>電話:</b> '+escapeHtml(f.phone):"")+'</div>'+
         '<div class="grid2"><input id="mobileTradeRadius" type="number" min="0.1" step="0.1" value="'+escapeHtml(document.querySelector("#tradeRadius").value||"2")+'" aria-label="スマホ商圏半径km"><button id="mobileDrawTrade" type="button">商圏を描画</button></div>'+
+        mobileExecutiveHtml()+
         mobileShareHtml()+
         '<div class="mobile-sheet-actions"><button id="mobileExportTrade" type="button">CSV出力</button><button id="mobileExportReport" type="button">PDF出力</button><button id="mobileAddTradeCompare" type="button">比較に追加</button><button id="mobileOpenAnalysis" type="button">分析を見る</button></div>'+
         '<div class="trade-scope">'+escapeHtml(document.querySelector("#tradeScopeStatus")?.textContent||"商圏を描画すると集計します。")+'</div>';
@@ -1161,16 +1186,19 @@
     }
     function bindMobileSheetActions(){
       document.querySelector("#mobileDrawTrade")?.addEventListener("click",()=>{document.querySelector("#tradeRadius").value=document.querySelector("#mobileTradeRadius").value;updateRadiusChips();drawTradeArea()});
-      ["mobileOwnClientCount","mobileVisitNursingUseRate","mobileTargetShareRate"].forEach(id=>document.querySelector("#"+id)?.addEventListener("change",()=>{
+      ["mobileOwnClientCount","mobileVisitNursingUseRate","mobileTargetShareRate","mobileTargetMonths"].forEach(id=>document.querySelector("#"+id)?.addEventListener("change",()=>{
         const own=document.querySelector("#mobileOwnClientCount");
         const rate=document.querySelector("#mobileVisitNursingUseRate");
         const target=document.querySelector("#mobileTargetShareRate");
+        const months=document.querySelector("#mobileTargetMonths");
         state.ownClientCount=own&&own.value!==""?Math.max(0,Number(own.value)||0):null;
         if(rate)state.visitNursingUseRate=Math.max(0,Number(rate.value)||0);
         if(target)state.targetShareRate=Math.max(0,Number(target.value)||0);
+        if(months)state.targetMonths=Math.max(1,Number(months.value)||1);
         applyShareInputsToDom();
         renderSharePanel();
         renderTradeChips();
+        if(document.querySelector("#analysisTab")?.classList.contains("active"))renderAnalysis();
         renderMobileSheet();
       }));
       document.querySelector("#mobileExportTrade")?.addEventListener("click",exportTradeCsv);
@@ -1227,29 +1255,35 @@
       const own=document.querySelector("#ownClientCount");
       const rate=document.querySelector("#visitNursingUseRate");
       const target=document.querySelector("#targetShareRate");
+      const months=document.querySelector("#targetMonths");
       if(own)state.ownClientCount=own.value===""?null:Math.max(0,Number(own.value)||0);
       if(rate)state.visitNursingUseRate=Math.max(0,Number(rate.value)||0);
       if(target)state.targetShareRate=Math.max(0,Number(target.value)||0);
+      if(months)state.targetMonths=Math.max(1,Number(months.value)||1);
     }
     function applyShareInputsToDom(){
       const own=document.querySelector("#ownClientCount");
       const rate=document.querySelector("#visitNursingUseRate");
       const target=document.querySelector("#targetShareRate");
+      const months=document.querySelector("#targetMonths");
       if(own)own.value=state.ownClientCount===null?"":state.ownClientCount;
       if(rate)rate.value=state.visitNursingUseRate;
       if(target)target.value=state.targetShareRate;
+      if(months)months.value=state.targetMonths;
     }
     function calculateShareEstimate(est){
       const elderly75=Number(est?.elderly75||0);
       const useRate=Number(state.visitNursingUseRate||0);
       const targetRate=Number(state.targetShareRate||0);
+      const targetMonths=Math.max(1,Number(state.targetMonths||1));
       const own=state.ownClientCount===null?null:Number(state.ownClientCount||0);
       const estimatedUsers=Math.max(0,Math.round(elderly75*useRate/100));
       const ownShare=own===null||!estimatedUsers?null:own/estimatedUsers*100;
       const targetUsers=Math.round(estimatedUsers*targetRate/100);
       const targetGap=own===null?null:Math.max(0,targetUsers-own);
+      const monthlyGap=targetGap===null?null:Math.ceil(targetGap/targetMonths);
       const remaining=own===null?estimatedUsers:Math.max(0,estimatedUsers-own);
-      return {elderly75,useRate,targetRate,own,estimatedUsers,ownShare,targetUsers,targetGap,remaining};
+      return {elderly75,useRate,targetRate,targetMonths,own,estimatedUsers,ownShare,targetUsers,targetGap,monthlyGap,remaining};
     }
     function shareNarrative(share){
       if(!share.estimatedUsers)return "商圏内75歳以上人口または利用率が不足しているため、推定利用者数を算出できません。";
@@ -1258,6 +1292,55 @@
       if(share.ownShare>=share.targetRate*.7)return "目標に近い水準です。紹介元の上位候補へ集中営業すると、目標達成が現実的です。";
       if(share.ownShare<10)return "現シェアは低めです。商圏内需要に対して営業余地が大きく、居宅・医療連携先の開拓優先度が高いです。";
       return "一定のシェアはありますが、まだ獲得余地があります。競合密度と紹介元候補を見ながら重点先を絞ってください。";
+    }
+    function shareGapText(share){
+      if(share.targetGap===null)return "-";
+      return share.targetGap?("+"+yen(share.targetGap)+"人"):"達成";
+    }
+    function monthlyGapText(share){
+      if(share.monthlyGap===null)return "-";
+      return share.monthlyGap?(yen(share.monthlyGap)+"人/月"):"達成";
+    }
+    function buildTradeExecutiveSummary(est,counts,score,narrative,share,radius){
+      const nursing=counts["訪問看護"]||0;
+      const care=counts["居宅介護支援"]||0;
+      const hospitals=counts["病院"]||0;
+      const clinics=counts["訪問診療対応診療所"]||0;
+      const leads=care+hospitals+clinics;
+      const demandLabel=score.demand>=70?"需要大":score.demand>=45?"需要中":"需要限定";
+      const competitionLabel=score.competition>=70?"競合余地あり":score.competition>=45?"競合標準":"競合多め";
+      const referralLabel=score.referral>=70?"紹介元多い":score.referral>=40?"紹介元あり":"紹介元少なめ";
+      const shareLabel=share.own===null?"シェア未入力":share.ownShare>=share.targetRate?"目標到達":share.ownShare<10?"シェア低め":"伸長余地あり";
+      let headline=score.grade==="A"?"重点開拓に向く商圏です":score.grade==="B"?"営業優先度が高い商圏です":score.grade==="C"?"条件付きで検討する商圏です":"優先度は低めです";
+      if(share.own!==null&&share.ownShare>=share.targetRate)headline="維持・深耕を優先する商圏です";
+      const copy="半径"+radius+"km内に推定75歳以上人口 "+yen(est.elderly75)+"人、推定訪問看護利用者 "+yen(share.estimatedUsers)+"人。訪問看護 "+yen(nursing)+"施設、営業候補 "+yen(leads)+"施設を確認できます。";
+      const actions=[];
+      if(share.own===null){
+        actions.push("自施設利用者数を入力すると、現在シェアと月間獲得目標が出ます。");
+      }else if(share.targetGap>0){
+        actions.push("目標シェア"+pct(share.targetRate,0)+"まで残り"+yen(share.targetGap)+"人。"+yen(share.targetMonths)+"か月なら月"+yen(share.monthlyGap)+"人の新規獲得が目安です。");
+      }else{
+        actions.push("目標シェアは達成済みです。既存利用者の維持と紹介元深耕を優先してください。");
+      }
+      if(leads)actions.push("営業候補は居宅・病院・訪問診療対応診療所を中心に"+yen(leads)+"施設。営業リストで優先順に確認できます。");
+      if(nursing)actions.push("競合訪問看護は"+yen(nursing)+"施設。差別化ポイントと未接点の紹介元を確認してください。");
+      else actions.push("商圏内に訪問看護競合が見つかっていません。データ欠損の可能性も含めて現地確認してください。");
+      return {
+        gradeClass:"grade-"+score.grade.toLowerCase(),
+        badge:score.grade,
+        headline,
+        copy,
+        tags:[demandLabel,competitionLabel,referralLabel,shareLabel],
+        actions,
+        narrative
+      };
+    }
+    function renderExecutiveCard(summary){
+      return '<div class="executive-card '+summary.gradeClass+'">'+
+        '<div class="executive-head"><div><div class="executive-title">'+escapeHtml(summary.headline)+'</div><div class="executive-copy">'+escapeHtml(summary.copy)+'</div></div><span class="score-badge">'+escapeHtml(summary.badge)+'</span></div>'+
+        '<div class="executive-tags">'+summary.tags.map(tag=>'<span class="executive-tag">'+escapeHtml(tag)+'</span>').join("")+'</div>'+
+        '<div class="executive-actions">'+summary.actions.map((action,idx)=>'<div><b>'+(idx+1)+'.</b> '+escapeHtml(action)+'</div>').join("")+'</div>'+
+        '</div>';
     }
     function renderSharePanel(){
       syncShareInputs();
@@ -1274,9 +1357,9 @@
         '<div class="analysis-card"><b>'+yen(share.estimatedUsers)+'人</b>推定訪問看護利用者</div>'+
         '<div class="analysis-card"><b>'+(share.own===null?"未入力":yen(share.own)+"人")+'</b>自施設利用者</div>'+
         '<div class="analysis-card"><b>'+pct(share.ownShare)+'</b>自施設シェア</div>'+
-        '<div class="analysis-card"><b>'+(share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"): "達成"))+'</b>目標'+pct(share.targetRate,0)+'まで</div>'+
-        '<div class="analysis-card"><b>'+yen(share.remaining)+'人</b>残り市場余地</div>'+
-        '<div class="analysis-card"><b>'+pct(share.useRate,1)+'</b>訪問看護利用率 仮定</div>';
+        '<div class="analysis-card"><b>'+shareGapText(share)+'</b>目標'+pct(share.targetRate,0)+'まで</div>'+
+        '<div class="analysis-card"><b>'+monthlyGapText(share)+'</b>'+yen(share.targetMonths)+'か月の月間目標</div>'+
+        '<div class="analysis-card"><b>'+yen(share.remaining)+'人</b>残り市場余地</div>';
       comment.textContent=shareNarrative(share);
       return share;
     }
@@ -1287,16 +1370,21 @@
       const radius=Number(document.querySelector("#tradeRadius").value||0);
       const est=estimateTradePopulation(state.tradeRows)||{};
       const share=calculateShareEstimate(est);
+      const counts=tradeCounts();
+      const score=tradeScore(est,counts);
+      const executive=buildTradeExecutiveSummary(est,counts,score,tradeNarrative(score,est),share,radius);
       const chips=[
         ["推定利用者",yen(share.estimatedUsers)+"人"],
-        ["自施設",share.own===null?"未入力":yen(share.own)+"人"],
         ["シェア",pct(share.ownShare)],
-        ["目標差分",share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)+"人"):"達成")],
+        ["目標差分",shareGapText(share)],
+        ["月間目標",monthlyGapText(share)],
         ["半径",radius+"km"]
       ];
-      root.innerHTML='<div class="trade-chip-card"><div class="trade-chip-head"><div class="trade-chip-title">'+escapeHtml(state.selected.name)+'<br><small>'+escapeHtml(tradePrefNames())+'</small></div><button id="hideTradeChip" class="trade-chip-close" type="button" aria-label="商圏チップを閉じる">×</button></div><div class="trade-chip-list">'+chips.map(([k,v])=>'<span class="trade-chip">'+escapeHtml(k)+' <b>'+escapeHtml(v)+'</b></span>').join("")+'</div></div>';
+      root.innerHTML='<div class="trade-chip-card"><div class="trade-chip-head"><div class="trade-chip-title">'+escapeHtml(state.selected.name)+'<br><small>'+escapeHtml(tradePrefNames())+'</small></div><button id="hideTradeChip" class="trade-chip-close" type="button" aria-label="商圏チップを閉じる">×</button></div><div class="trade-chip-decision"><b>'+escapeHtml(executive.headline)+'</b><br>'+escapeHtml(executive.actions[0]||"")+'</div><div class="trade-chip-list">'+chips.map(([k,v])=>'<span class="trade-chip">'+escapeHtml(k)+' <b>'+escapeHtml(v)+'</b></span>').join("")+'</div><div class="trade-chip-actions"><button id="chipOpenAnalysis" type="button">詳細分析</button><button id="chipExportPdf" type="button">PDF</button></div></div>';
       root.classList.add("show");
       document.querySelector("#hideTradeChip")?.addEventListener("click",()=>{state.tradeChipVisible=false;renderTradeChips()});
+      document.querySelector("#chipOpenAnalysis")?.addEventListener("click",()=>{renderAnalysis();switchTab("analysis")});
+      document.querySelector("#chipExportPdf")?.addEventListener("click",exportTradeReportPdf);
     }
     function tradeCounts(){
       return (state.tradeRows||[]).reduce((memo,f)=>{memo[f.group]=(memo[f.group]||0)+1;return memo},{});
@@ -1371,18 +1459,14 @@
       const care=counts["居宅介護支援"]||0;
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
-      renderSharePanel();
+      const share=renderSharePanel()||calculateShareEstimate(est);
+      const executive=buildTradeExecutiveSummary(est,counts,score,narrative,share,radius);
       document.querySelector("#analysisSummary").innerHTML=
         '<div class="analysis-card"><b><span class="score-badge">'+score.grade+'</span> '+score.overall+'</b>商圏総合スコア</div>'+
         '<div class="analysis-card"><b>'+yen(est.elderly75)+'</b>推計75歳以上人口</div>'+
         '<div class="analysis-card"><b>'+yen(nursing)+'</b>訪問看護</div>'+
         '<div class="analysis-card"><b>'+yen(targetRows().length)+'</b>営業候補</div>';
-      document.querySelector("#tradeInsight").innerHTML=
-        '<div class="insight-card"><strong>営業・企画判断: '+narrative.headline+'</strong>'+
-        '<div>'+narrative.action+'</div>'+
-        (narrative.strengths.length?'<div><b>強み:</b> '+narrative.strengths.join(' / ')+'</div>':'')+
-        (narrative.cautions.length?'<div><b>注意:</b> '+narrative.cautions.join(' / ')+'</div>':'')+
-        '</div>';
+      document.querySelector("#tradeInsight").innerHTML=renderExecutiveCard(executive);
       document.querySelector("#scoreBreakdown").innerHTML=[
         ["需要",score.demand],
         ["供給不足",score.shortage],
@@ -1470,6 +1554,7 @@
       const counts=tradeCounts();
       const score=tradeScore(est,counts);
       const narrative=tradeNarrative(score,est);
+      const executive=buildTradeExecutiveSummary(est,counts,score,narrative,share,radius);
       const targets=targetRows().slice(0,15);
       const serviceRows=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ja"));
       const nursing=counts["訪問看護"]||0;
@@ -1486,8 +1571,11 @@
       ];
       const sourceNote='人口・高齢者人口、推定訪問看護利用者数、自施設シェアは推計です。推定訪問看護利用者数は商圏内75歳以上人口×訪問看護利用率で算出しています。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
       const html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>商圏分析レポート</title>'+
-        '<style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#17202a;font-family:"Yu Gothic","Meiryo",system-ui,sans-serif;font-size:12px;line-height:1.55}h1{font-size:22px;margin:0 0 6px}h2{font-size:14px;margin:18px 0 8px;border-bottom:1px solid #d9e0ea;padding-bottom:4px}.sub{color:#667085}.head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;border-bottom:3px solid #0b57d0;padding-bottom:10px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900;padding:4px 10px}.decision{border:1px solid #d9e0ea;border-left:5px solid #0b57d0;border-radius:8px;padding:10px;margin:12px 0}.decision strong{font-size:16px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.report-metric{border:1px solid #d9e0ea;border-radius:8px;padding:8px;background:#f8fafc;min-height:54px}.report-metric b{display:block;font-size:17px;line-height:1.1}.report-metric span{display:block;color:#667085;font-size:10px;margin-top:4px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score-line{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center}.meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:#0b57d0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #edf1f7;padding:6px 4px;text-align:left;vertical-align:top}th{font-size:10px;color:#344054;background:#f8fafc}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.note{font-size:10px;color:#667085;margin-top:14px}.pagebreak{break-before:page}@media print{button{display:none}}</style></head><body>'+
+        '<style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#17202a;font-family:"Yu Gothic","Meiryo",system-ui,sans-serif;font-size:12px;line-height:1.55}h1{font-size:22px;margin:0 0 6px}h2{font-size:14px;margin:18px 0 8px;border-bottom:1px solid #d9e0ea;padding-bottom:4px}.sub{color:#667085}.head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;border-bottom:3px solid #0b57d0;padding-bottom:10px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900;padding:4px 10px}.decision{border:1px solid #d9e0ea;border-left:5px solid #0b57d0;border-radius:8px;padding:10px;margin:12px 0}.decision strong{font-size:16px}.exec{border-left-color:#0f8a4b;background:#fbfffd}.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.tag{border:1px solid #d9e0ea;border-radius:999px;background:#f8fafc;padding:3px 8px;font-size:10px;font-weight:800;color:#344054}.actions{margin-top:8px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.report-metric{border:1px solid #d9e0ea;border-radius:8px;padding:8px;background:#f8fafc;min-height:54px}.report-metric b{display:block;font-size:17px;line-height:1.1}.report-metric span{display:block;color:#667085;font-size:10px;margin-top:4px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score-line{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center}.meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:#0b57d0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #edf1f7;padding:6px 4px;text-align:left;vertical-align:top}th{font-size:10px;color:#344054;background:#f8fafc}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.note{font-size:10px;color:#667085;margin-top:14px}.pagebreak{break-before:page}@media print{button{display:none}}</style></head><body>'+
         '<div class="head"><div><h1>商圏分析レポート</h1><div class="sub">集計対象: '+escapeHtml(tradePrefNames())+' / '+escapeHtml(state.selected.city||"-")+' / 半径 '+escapeHtml(radius)+'km</div></div><div class="sub">作成: '+escapeHtml(createdAt)+'</div></div>'+
+        '<div class="decision exec"><strong><span class="badge">'+escapeHtml(executive.badge)+'</span> エグゼクティブサマリー: '+escapeHtml(executive.headline)+'</strong><br>'+escapeHtml(executive.copy)+
+        '<div class="tags">'+executive.tags.map(tag=>'<span class="tag">'+escapeHtml(tag)+'</span>').join("")+'</div>'+
+        '<div class="actions">'+executive.actions.map((action,idx)=>'<div><b>'+(idx+1)+'.</b> '+escapeHtml(action)+'</div>').join("")+'</div></div>'+
         '<h2>対象拠点</h2><table><tbody>'+
         '<tr><th>事業所名</th><td>'+escapeHtml(state.selected.name)+'</td><th>サービス</th><td>'+escapeHtml(state.selected.serviceLabel)+'</td></tr>'+
         '<tr><th>住所</th><td colspan="3">'+escapeHtml(state.selected.address||"-")+'</td></tr>'+
@@ -1510,6 +1598,7 @@
         reportMetric("自施設利用者",share.own===null?"未入力":yen(share.own),share.own===null?"":"人")+
         reportMetric("自施設シェア",pct(share.ownShare),"")+
         reportMetric("目標"+pct(share.targetRate,0)+"まで",share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)):"達成"),share.targetGap?"人":"")+
+        reportMetric(yen(share.targetMonths)+"か月の月間目標",monthlyGapText(share),"")+
         '</div><div class="decision"><strong>シェア判断</strong><br>'+escapeHtml(shareNarrative(share))+'</div>'+
         '<h2>スコア内訳</h2><div class="scores">'+scoreRows.map(([label,value])=>'<div class="score-line"><span>'+escapeHtml(label)+'</span><div class="meter"><i style="width:'+value+'%"></i></div><b>'+value+'</b></div>').join("")+'</div>'+
         '<h2>主要カテゴリ</h2><div class="metrics">'+
@@ -1625,7 +1714,7 @@
     map.on("moveend zoomend",scheduleRenderStations);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
-    ["ownClientCount","visitNursingUseRate","targetShareRate"].forEach(id=>document.querySelector("#"+id).addEventListener("input",()=>{renderSharePanel();renderTradeChips();renderMobileSheet()}));
+    ["ownClientCount","visitNursingUseRate","targetShareRate","targetMonths"].forEach(id=>document.querySelector("#"+id).addEventListener("input",()=>{renderSharePanel();renderTradeChips();if(document.querySelector("#analysisTab")?.classList.contains("active"))renderAnalysis();renderMobileSheet()}));
     document.querySelectorAll("#radiusChips button").forEach(button=>button.addEventListener("click",()=>{
       document.querySelector("#tradeRadius").value=button.dataset.radius;
       updateRadiusChips();
