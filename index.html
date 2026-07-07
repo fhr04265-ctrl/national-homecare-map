@@ -102,6 +102,7 @@
     .meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}
     .meter i{display:block;height:100%;background:var(--blue)}
     .share-panel{display:grid;gap:9px;border:1px solid #c7d7fe;border-radius:8px;background:#f8fbff;padding:10px;margin-top:10px}
+    .action-panel{border-color:#c7ead8;background:#fbfffd}
     .share-inputs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
     .share-inputs label{display:grid;gap:4px;font-size:11px;font-weight:800;color:#344054}
     .share-inputs input{background:#fff}
@@ -306,6 +307,20 @@
               <div class="share-note">推定訪問看護利用者数 = 商圏内75歳以上人口 × 訪問看護利用率。実際の利用者数ではなく、経営検討用の暫定推計です。</div>
             </details>
           </div>
+          <div class="share-panel action-panel">
+            <div class="label">営業アクション設計</div>
+            <div class="share-inputs">
+              <label>紹介→利用開始率<input id="referralStartRate" type="number" min="1" max="100" step="1" value="60"></label>
+              <label>営業接触→紹介率<input id="contactReferralRate" type="number" min="1" max="100" step="1" value="20"></label>
+              <label>1看護師あたり利用者<input id="clientsPerNurse" type="number" min="1" max="80" step="1" value="18"></label>
+            </div>
+            <div id="actionSummary" class="analysis-grid"></div>
+            <div id="actionComment" class="share-comment">自施設利用者数を入力すると、月間獲得目標から必要な紹介数・営業接触数を試算します。</div>
+            <details class="share-assumptions">
+              <summary>営業前提を見る</summary>
+              <div class="share-note">必要紹介数/月 = 月間獲得目標 ÷ 紹介→利用開始率。必要営業接触数/月 = 必要紹介数/月 ÷ 営業接触→紹介率。実績値に合わせて前提を調整してください。</div>
+            </details>
+          </div>
           <div id="analysisSummary" class="analysis-grid" style="margin-top:8px"></div>
         </section>
         <section class="panel">
@@ -406,10 +421,10 @@
   </nav>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="national_homecare_data/manifest.js?v=20260707-executive-summary"></script>
+  <script src="national_homecare_data/manifest.js?v=20260708-action-plan"></script>
   <script>
     const manifest = window.NATIONAL_HOMECARE_MANIFEST;
-    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, ownClientCount:null, visitNursingUseRate:12, targetShareRate:30, targetMonths:12, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
+    const state = { pref:"", city:"すべて", q:"", groups:new Set(), mode:"", selected:null, tradeRows:[], tradeChipVisible:false, ownClientCount:null, visitNursingUseRate:12, targetShareRate:30, targetMonths:12, referralStartRate:60, contactReferralRate:20, clientsPerNurse:18, data:null, dataByPref:{}, meshData:null, meshDataByPref:{}, meshLoadingByPref:{}, meshSupplyData:null, meshSupplyDataByPref:{}, meshSupplyLoadingByPref:{}, meshSupplyMap:null, meshSupplyMapByPref:{}, meshTradeEstimate:null, tradePrefCodes:[], compareAreas:[], stationData:null, stationLoading:null };
     const priorityGroups = ["居宅介護支援","病院","訪問診療対応診療所","訪問看護"];
     const mapModes = {
       sales:{label:"営業先探索",short:"営業",desc:"居宅・医療連携先・訪問看護を中心に、営業先候補を探します。",groups:["居宅介護支援","病院","訪問診療対応診療所","訪問看護"],market:"meshElderly75PerVisitNursing",stations:false,names:false,catchment:false},
@@ -1141,6 +1156,14 @@
       const share=calculateShareEstimate(est);
       return renderExecutiveCard(buildTradeExecutiveSummary(est,counts,score,tradeNarrative(score,est),share,document.querySelector("#tradeRadius").value||"-"));
     }
+    function mobileActionHtml(){
+      if(!state.tradeRows.length)return "";
+      const share=calculateShareEstimate(estimateTradePopulation(state.tradeRows));
+      const plan=calculateActionPlan(share,targetRows().length);
+      return '<div class="share-panel action-panel"><div class="label">営業アクション</div>'+
+        '<div class="analysis-grid"><div class="analysis-card"><b>'+actionValue(plan.monthlyNew,"人/月")+'</b>月間新規目標</div><div class="analysis-card"><b>'+actionValue(plan.requiredReferrals,"件/月")+'</b>必要紹介数</div><div class="analysis-card"><b>'+actionValue(plan.requiredContacts,"件/月")+'</b>必要営業接触数</div><div class="analysis-card"><b>'+(plan.nurseFte===null?"-":(plan.nurseFte?plan.nurseFte.toFixed(1)+"人":"追加不要"))+'</b>追加受け入れ体制</div></div>'+
+        '<div class="share-comment">'+escapeHtml(actionPlanNarrative(plan,share))+'</div></div>';
+    }
     function mobileSelectedHtml(){
       if(!state.selected)return '<div class="selected">地図上の施設をタップすると、ここに施設詳細と商圏操作が表示されます。</div>';
       const f=state.selected;
@@ -1148,6 +1171,7 @@
         '<div class="grid2"><input id="mobileTradeRadius" type="number" min="0.1" step="0.1" value="'+escapeHtml(document.querySelector("#tradeRadius").value||"2")+'" aria-label="スマホ商圏半径km"><button id="mobileDrawTrade" type="button">商圏を描画</button></div>'+
         mobileExecutiveHtml()+
         mobileShareHtml()+
+        mobileActionHtml()+
         '<div class="mobile-sheet-actions"><button id="mobileExportTrade" type="button">CSV出力</button><button id="mobileExportReport" type="button">PDF出力</button><button id="mobileAddTradeCompare" type="button">比較に追加</button><button id="mobileOpenAnalysis" type="button">分析を見る</button></div>'+
         '<div class="trade-scope">'+escapeHtml(document.querySelector("#tradeScopeStatus")?.textContent||"商圏を描画すると集計します。")+'</div>';
     }
@@ -1301,12 +1325,72 @@
       if(share.monthlyGap===null)return "-";
       return share.monthlyGap?(yen(share.monthlyGap)+"人/月"):"達成";
     }
+    function syncActionInputs(){
+      const referral=document.querySelector("#referralStartRate");
+      const contact=document.querySelector("#contactReferralRate");
+      const nurse=document.querySelector("#clientsPerNurse");
+      if(referral)state.referralStartRate=Math.max(1,Math.min(100,Number(referral.value)||1));
+      if(contact)state.contactReferralRate=Math.max(1,Math.min(100,Number(contact.value)||1));
+      if(nurse)state.clientsPerNurse=Math.max(1,Number(nurse.value)||1);
+    }
+    function applyActionInputsToDom(){
+      const referral=document.querySelector("#referralStartRate");
+      const contact=document.querySelector("#contactReferralRate");
+      const nurse=document.querySelector("#clientsPerNurse");
+      if(referral)referral.value=state.referralStartRate;
+      if(contact)contact.value=state.contactReferralRate;
+      if(nurse)nurse.value=state.clientsPerNurse;
+    }
+    function calculateActionPlan(share,leadCount){
+      const referralRate=Math.max(1,Number(state.referralStartRate||1))/100;
+      const contactRate=Math.max(1,Number(state.contactReferralRate||1))/100;
+      const clientsPerNurse=Math.max(1,Number(state.clientsPerNurse||1));
+      const monthlyNew=share?.monthlyGap===null?null:Number(share?.monthlyGap||0);
+      const requiredReferrals=monthlyNew===null?null:Math.ceil(monthlyNew/referralRate);
+      const requiredContacts=requiredReferrals===null?null:Math.ceil(requiredReferrals/contactRate);
+      const leadVisits=requiredContacts===null||!leadCount?null:Math.ceil(requiredContacts/leadCount);
+      const nurseFte=share?.targetGap===null?null:Math.ceil(((share.targetGap||0)/clientsPerNurse)*10)/10;
+      return {referralRate:referralRate*100,contactRate:contactRate*100,clientsPerNurse,monthlyNew,requiredReferrals,requiredContacts,leadVisits,nurseFte,leadCount};
+    }
+    function actionValue(value,unit){
+      if(value===null||!Number.isFinite(value))return "-";
+      if(!value)return "達成";
+      return yen(value)+(unit||"");
+    }
+    function actionPlanNarrative(plan,share){
+      if(!share||share.own===null)return "自施設利用者数を入力すると、月間獲得目標から必要な紹介数・営業接触数を試算します。";
+      if(!share.targetGap)return "目標シェアは達成済みです。新規開拓量よりも、紹介元深耕と既存利用者の維持を優先してください。";
+      return "月"+yen(plan.monthlyNew)+"人の新規利用を目指す場合、紹介"+yen(plan.requiredReferrals)+"件/月、営業接触"+yen(plan.requiredContacts)+"件/月が目安です。候補リストを上位から絞り、接触実績で前提率を更新してください。";
+    }
+    function renderActionPanel(){
+      syncActionInputs();
+      const summary=document.querySelector("#actionSummary");
+      const comment=document.querySelector("#actionComment");
+      if(!summary||!comment)return null;
+      if(!state.selected||!state.tradeRows.length){
+        summary.innerHTML='<div class="analysis-card"><b>-</b>月間新規目標</div><div class="analysis-card"><b>-</b>必要営業接触数</div>';
+        comment.textContent="自施設利用者数を入力すると、月間獲得目標から必要な紹介数・営業接触数を試算します。";
+        return null;
+      }
+      const share=calculateShareEstimate(estimateTradePopulation(state.tradeRows));
+      const plan=calculateActionPlan(share,targetRows().length);
+      summary.innerHTML=
+        '<div class="analysis-card"><b>'+actionValue(plan.monthlyNew,"人/月")+'</b>月間新規目標</div>'+
+        '<div class="analysis-card"><b>'+actionValue(plan.requiredReferrals,"件/月")+'</b>必要紹介数</div>'+
+        '<div class="analysis-card"><b>'+actionValue(plan.requiredContacts,"件/月")+'</b>必要営業接触数</div>'+
+        '<div class="analysis-card"><b>'+(plan.leadVisits===null?"-":(plan.leadVisits?yen(plan.leadVisits)+"回/月":"達成"))+'</b>候補1施設あたり</div>'+
+        '<div class="analysis-card"><b>'+(plan.nurseFte===null?"-":(plan.nurseFte?plan.nurseFte.toFixed(1)+"人":"追加不要"))+'</b>追加受け入れ体制</div>'+
+        '<div class="analysis-card"><b>'+yen(plan.leadCount)+'</b>営業候補</div>';
+      comment.textContent=actionPlanNarrative(plan,share);
+      return plan;
+    }
     function buildTradeExecutiveSummary(est,counts,score,narrative,share,radius){
       const nursing=counts["訪問看護"]||0;
       const care=counts["居宅介護支援"]||0;
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
       const leads=care+hospitals+clinics;
+      const actionPlan=calculateActionPlan(share,leads);
       const demandLabel=score.demand>=70?"需要大":score.demand>=45?"需要中":"需要限定";
       const competitionLabel=score.competition>=70?"競合余地あり":score.competition>=45?"競合標準":"競合多め";
       const referralLabel=score.referral>=70?"紹介元多い":score.referral>=40?"紹介元あり":"紹介元少なめ";
@@ -1319,6 +1403,7 @@
         actions.push("自施設利用者数を入力すると、現在シェアと月間獲得目標が出ます。");
       }else if(share.targetGap>0){
         actions.push("目標シェア"+pct(share.targetRate,0)+"まで残り"+yen(share.targetGap)+"人。"+yen(share.targetMonths)+"か月なら月"+yen(share.monthlyGap)+"人の新規獲得が目安です。");
+        actions.push("前提率どおりなら、紹介"+yen(actionPlan.requiredReferrals)+"件/月、営業接触"+yen(actionPlan.requiredContacts)+"件/月が活動量の目安です。");
       }else{
         actions.push("目標シェアは達成済みです。既存利用者の維持と紹介元深耕を優先してください。");
       }
@@ -1448,6 +1533,7 @@
         document.querySelector("#prioritySummary").innerHTML="";
         document.querySelector("#serviceSummary").innerHTML="";
         renderSharePanel();
+        renderActionPanel();
         return;
       }
       context.innerHTML='<b>'+state.selected.name+'</b>'+state.selected.serviceLabel+' / '+(state.selected.city||"-")+' / 半径 '+radius+'km';
@@ -1460,6 +1546,7 @@
       const hospitals=counts["病院"]||0;
       const clinics=counts["訪問診療対応診療所"]||0;
       const share=renderSharePanel()||calculateShareEstimate(est);
+      renderActionPanel();
       const executive=buildTradeExecutiveSummary(est,counts,score,narrative,share,radius);
       document.querySelector("#analysisSummary").innerHTML=
         '<div class="analysis-card"><b><span class="score-badge">'+score.grade+'</span> '+score.overall+'</b>商圏総合スコア</div>'+
@@ -1555,7 +1642,9 @@
       const score=tradeScore(est,counts);
       const narrative=tradeNarrative(score,est);
       const executive=buildTradeExecutiveSummary(est,counts,score,narrative,share,radius);
-      const targets=targetRows().slice(0,15);
+      const allTargets=targetRows();
+      const actionPlan=calculateActionPlan(share,allTargets.length);
+      const targets=allTargets.slice(0,15);
       const serviceRows=Object.entries(counts).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"ja"));
       const nursing=counts["訪問看護"]||0;
       const care=counts["居宅介護支援"]||0;
@@ -1569,7 +1658,7 @@
         ["競合余地",score.competition],
         ["アクセス暫定",score.access]
       ];
-      const sourceNote='人口・高齢者人口、推定訪問看護利用者数、自施設シェアは推計です。推定訪問看護利用者数は商圏内75歳以上人口×訪問看護利用率で算出しています。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
+      const sourceNote='人口・高齢者人口、推定訪問看護利用者数、自施設シェア、営業アクション設計は推計です。推定訪問看護利用者数は商圏内75歳以上人口×訪問看護利用率で算出しています。営業接触数は入力した紹介率・利用開始率にもとづく暫定試算です。スコアは営業・企画検討用の暫定指標であり、最終判断には現地情報・既存接点・地域事情の確認が必要です。';
       const html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>商圏分析レポート</title>'+
         '<style>@page{size:A4;margin:14mm}*{box-sizing:border-box}body{margin:0;color:#17202a;font-family:"Yu Gothic","Meiryo",system-ui,sans-serif;font-size:12px;line-height:1.55}h1{font-size:22px;margin:0 0 6px}h2{font-size:14px;margin:18px 0 8px;border-bottom:1px solid #d9e0ea;padding-bottom:4px}.sub{color:#667085}.head{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:start;border-bottom:3px solid #0b57d0;padding-bottom:10px}.badge{display:inline-flex;align-items:center;justify-content:center;min-width:42px;border-radius:999px;background:#eef4ff;color:#164db3;font-weight:900;padding:4px 10px}.decision{border:1px solid #d9e0ea;border-left:5px solid #0b57d0;border-radius:8px;padding:10px;margin:12px 0}.decision strong{font-size:16px}.exec{border-left-color:#0f8a4b;background:#fbfffd}.tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.tag{border:1px solid #d9e0ea;border-radius:999px;background:#f8fafc;padding:3px 8px;font-size:10px;font-weight:800;color:#344054}.actions{margin-top:8px}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.report-metric{border:1px solid #d9e0ea;border-radius:8px;padding:8px;background:#f8fafc;min-height:54px}.report-metric b{display:block;font-size:17px;line-height:1.1}.report-metric span{display:block;color:#667085;font-size:10px;margin-top:4px}.scores{display:grid;grid-template-columns:1fr 1fr;gap:8px}.score-line{display:grid;grid-template-columns:72px 1fr 36px;gap:8px;align-items:center}.meter{height:8px;background:#edf1f7;border-radius:99px;overflow:hidden}.meter i{display:block;height:100%;background:#0b57d0}table{width:100%;border-collapse:collapse}th,td{border-bottom:1px solid #edf1f7;padding:6px 4px;text-align:left;vertical-align:top}th{font-size:10px;color:#344054;background:#f8fafc}.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}.note{font-size:10px;color:#667085;margin-top:14px}.pagebreak{break-before:page}@media print{button{display:none}}</style></head><body>'+
         '<div class="head"><div><h1>商圏分析レポート</h1><div class="sub">集計対象: '+escapeHtml(tradePrefNames())+' / '+escapeHtml(state.selected.city||"-")+' / 半径 '+escapeHtml(radius)+'km</div></div><div class="sub">作成: '+escapeHtml(createdAt)+'</div></div>'+
@@ -1600,6 +1689,12 @@
         reportMetric("目標"+pct(share.targetRate,0)+"まで",share.targetGap===null?"-":(share.targetGap?("+"+yen(share.targetGap)):"達成"),share.targetGap?"人":"")+
         reportMetric(yen(share.targetMonths)+"か月の月間目標",monthlyGapText(share),"")+
         '</div><div class="decision"><strong>シェア判断</strong><br>'+escapeHtml(shareNarrative(share))+'</div>'+
+        '<h2>営業アクション設計</h2><div class="metrics">'+
+        reportMetric("月間新規目標",actionValue(actionPlan.monthlyNew,"人/月"),"")+
+        reportMetric("必要紹介数",actionValue(actionPlan.requiredReferrals,"件/月"),"")+
+        reportMetric("必要営業接触数",actionValue(actionPlan.requiredContacts,"件/月"),"")+
+        reportMetric("追加受け入れ体制",actionPlan.nurseFte===null?"-":(actionPlan.nurseFte?actionPlan.nurseFte.toFixed(1):"追加不要"),actionPlan.nurseFte?"人":"")+
+        '</div><div class="decision"><strong>活動量の目安</strong><br>'+escapeHtml(actionPlanNarrative(actionPlan,share))+'</div>'+
         '<h2>スコア内訳</h2><div class="scores">'+scoreRows.map(([label,value])=>'<div class="score-line"><span>'+escapeHtml(label)+'</span><div class="meter"><i style="width:'+value+'%"></i></div><b>'+value+'</b></div>').join("")+'</div>'+
         '<h2>主要カテゴリ</h2><div class="metrics">'+
         reportMetric("居宅介護支援",yen(care),"施設")+
@@ -1714,7 +1809,8 @@
     map.on("moveend zoomend",scheduleRenderStations);
     document.querySelector("#drawTrade").addEventListener("click",drawTradeArea);
     document.querySelector("#tradeRadius").addEventListener("change",()=>{updateRadiusChips();drawTradeArea()});
-    ["ownClientCount","visitNursingUseRate","targetShareRate","targetMonths"].forEach(id=>document.querySelector("#"+id).addEventListener("input",()=>{renderSharePanel();renderTradeChips();if(document.querySelector("#analysisTab")?.classList.contains("active"))renderAnalysis();renderMobileSheet()}));
+    ["ownClientCount","visitNursingUseRate","targetShareRate","targetMonths"].forEach(id=>document.querySelector("#"+id).addEventListener("input",()=>{renderSharePanel();renderActionPanel();renderTradeChips();if(document.querySelector("#analysisTab")?.classList.contains("active"))renderAnalysis();renderMobileSheet()}));
+    ["referralStartRate","contactReferralRate","clientsPerNurse"].forEach(id=>document.querySelector("#"+id).addEventListener("input",()=>{renderActionPanel();renderTradeChips();if(document.querySelector("#analysisTab")?.classList.contains("active"))renderAnalysis();renderMobileSheet()}));
     document.querySelectorAll("#radiusChips button").forEach(button=>button.addEventListener("click",()=>{
       document.querySelector("#tradeRadius").value=button.dataset.radius;
       updateRadiusChips();
