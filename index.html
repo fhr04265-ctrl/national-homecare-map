@@ -34,6 +34,9 @@
     .radius-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px}
     .radius-chips button{min-height:34px;font-size:12px}
     .radius-chips button.active{background:#eef4ff;border-color:var(--blue);color:var(--blue)}
+    .mobile-radius-draw{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+    .mobile-radius-draw button{min-height:40px;font-size:12px;font-weight:800}
+    .mobile-radius-draw button.active{background:#eef4ff;border-color:var(--blue);color:var(--blue)}
     .map-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
     .variable-row{display:grid;grid-template-columns:1fr;gap:6px;margin-top:8px}
     .legend-box{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:11px;color:var(--muted);line-height:1.45}
@@ -1164,8 +1167,11 @@
     function mobileSelectedHtml(){
       if(!state.selected)return '<div class="selected">地図上の施設をタップすると、ここに施設詳細と商圏操作が表示されます。</div>';
       const f=state.selected;
+      const currentRadius=String(Number(document.querySelector("#tradeRadius").value||2));
+      const radiusButtons=[1,2,3,5].map(radius=>'<button type="button" data-mobile-radius="'+radius+'" class="'+(currentRadius===String(radius)?"active":"")+'">'+radius+'km</button>').join("");
       return '<div class="selected"><b>'+escapeHtml(f.name)+'</b><br>'+escapeHtml(f.serviceLabel)+' / '+escapeHtml(f.city||"-")+'<br>'+escapeHtml(f.address||"")+'<br>'+(f.phone?'<b>電話:</b> '+escapeHtml(f.phone):"")+'</div>'+
-        '<div class="grid2"><input id="mobileTradeRadius" type="number" min="0.1" step="0.1" value="'+escapeHtml(document.querySelector("#tradeRadius").value||"2")+'" aria-label="スマホ商圏半径km"><button id="mobileDrawTrade" type="button">商圏を描画</button></div>'+
+        '<div class="label">半径を選んで即描画</div><div class="mobile-radius-draw">'+radiusButtons+'</div>'+
+        '<div class="grid2"><input id="mobileTradeRadius" type="number" min="0.1" step="0.1" value="'+escapeHtml(document.querySelector("#tradeRadius").value||"2")+'" aria-label="スマホ商圏半径km"><button id="mobileDrawTrade" type="button">現在の半径で描画</button></div>'+
         mobileExecutiveHtml()+
         mobileShareHtml()+
         mobileActionHtml()+
@@ -1225,7 +1231,15 @@
       bindMobileSheetActions();
     }
     function bindMobileSheetActions(){
-      document.querySelector("#mobileDrawTrade")?.addEventListener("click",()=>{document.querySelector("#tradeRadius").value=document.querySelector("#mobileTradeRadius").value;updateRadiusChips();drawTradeArea()});
+      const drawMobileTrade=value=>{
+        document.querySelector("#tradeRadius").value=value;
+        const mobileRadius=document.querySelector("#mobileTradeRadius");
+        if(mobileRadius)mobileRadius.value=value;
+        updateRadiusChips();
+        drawTradeArea();
+      };
+      document.querySelectorAll("[data-mobile-radius]").forEach(button=>button.addEventListener("click",()=>drawMobileTrade(button.dataset.mobileRadius)));
+      document.querySelector("#mobileDrawTrade")?.addEventListener("click",()=>drawMobileTrade(document.querySelector("#mobileTradeRadius").value));
       ["mobileOwnClientCount","mobileVisitNursingUseRate","mobileTargetShareRate","mobileTargetMonths"].forEach(id=>document.querySelector("#"+id)?.addEventListener("change",()=>{
         const own=document.querySelector("#mobileOwnClientCount");
         const rate=document.querySelector("#mobileVisitNursingUseRate");
